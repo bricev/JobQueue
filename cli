@@ -1,0 +1,17 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Libcast JobQueue CLI v 0.1
+ */
+
+require realpath(__DIR__.'/vendor/autoload.php');
+
+use Libcast\Job\Command\ListJobCommand;
+use Libcast\Job\Command\EditJobCommand;
+use Symfony\Component\Console\Application;
+
+$application = new Application('Libcast Job Queue CLI', '0.1');
+$application->add(new ListJobCommand);
+$application->add(new EditJobCommand);
+$application->run();

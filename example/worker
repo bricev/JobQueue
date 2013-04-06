@@ -1,0 +1,46 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * This Worker example:
+ * - is named 'libcast_worker'
+ * - uses Monolog a Logger class
+ * - uses a Redis as Queue storage system
+ * 
+ * The Logger should send logs in both a worker-dedicated and common streams
+ * 
+ * This Worker shoul be run as a daemon
+ * See /example/worker.conf to get an example of an upstart job (Ubuntu/Debian)
+ */
+
+$name           = 'libcast_worker';
+$profiles       = array(
+    'dummy-stuff',
+);
+$component_path = __DIR__.'/../';
+
+
+require realpath("$component_path/vendor/autoload.php");
+
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
+use Libcast\Job\Queue\QueueFactory;
+use Libcast\Job\Worker\Worker;
+
+// setup the Monolog logger
+$logger = new Logger($name);
+$logger->pushHandler(new StreamHandler(__DIR__."/../log/$name.log", Logger::DEBUG));
+$logger->pushHandler(new StreamHandler(__DIR__."/../log/common.log", Logger::DEBUG));
+
+// get a Queue instance
+$queueFactory = new QueueFactory('redis', array(
+    'host' => 'localhost',
+    'port' => 6379,
+), $logger);
+
+$queue = $queueFactory->getQueue();
+
+// setup and start the Worker
+$worker = new Worker($name, $queue, $profiles, $logger);
+$worker->run();
