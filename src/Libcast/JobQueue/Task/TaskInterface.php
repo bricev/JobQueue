@@ -1,12 +1,22 @@
 <?php
 
-namespace Libcast\Job\Task;
+namespace Libcast\JobQueue\Task;
 
-use Libcast\Job\Job\JobInterface;
-use Libcast\Job\Task\TaskInterface;
+use Libcast\JobQueue\Job\JobInterface;
+use Libcast\JobQueue\Task\TaskInterface;
 
 interface TaskInterface
 {
+  /**
+   * @return array List of all Task statuses
+   */
+  public static function getStatuses();
+  
+  /**
+   * @return array List of non persisted Task statuses
+   */
+  public static function getFakeTaskStatuses();
+  
   public function setId($id);
 
   public function getId();
@@ -39,10 +49,16 @@ interface TaskInterface
   public function getProgress($float = true);
 
   /**
+   * @param bool $human_readable False for a Unix timestamp
+   * @return string|int A string or a Unix timestamp
+   */
+  public function getCreatedAt($human_readable = true);
+
+  /**
    * Schedule Task so it can't be executed before a date.
    * 
    * @param string $string A valid date format (Eg. '2013-11-30 20:30:50')
-   * @throws \Libcast\Job\Exception\TaskException
+   * @throws \Libcast\JobQueue\Exception\TaskException
    */
   public function setScheduledAt($string);
   

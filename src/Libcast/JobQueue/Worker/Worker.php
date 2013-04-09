@@ -1,12 +1,12 @@
 <?php
 
-namespace Libcast\Job\Worker;
+namespace Libcast\JobQueue\Worker;
 
-use Libcast\Job\Exception\WorkerException;
-use Libcast\Job\Worker\WorkerInterface;
+use Libcast\JobQueue\Exception\WorkerException;
+use Libcast\JobQueue\Worker\WorkerInterface;
 
-use Libcast\Job\Queue\QueueInterface;
-use Libcast\Job\Task\Task;
+use Libcast\JobQueue\Queue\QueueInterface;
+use Libcast\JobQueue\Task\Task;
 
 use Psr\Log\LoggerInterface;
 
@@ -93,7 +93,7 @@ class Worker implements WorkerInterface
   }
 
   /**
-   * @return \Libcast\Job\Queue\QueueInterface 
+   * @return \Libcast\JobQueue\Queue\QueueInterface 
    */
   protected function getQueue()
   {
@@ -141,7 +141,7 @@ class Worker implements WorkerInterface
     {
       while ($task = $queue->getNextTask($this->getProfiles()))
       {
-        /* @var $task \Libcast\Job\Task\TaskInterface */
+        /* @var $task \Libcast\JobQueue\Task\TaskInterface */
 
         $this->setStatus(self::STATUS_BUSY);
 
@@ -170,7 +170,7 @@ class Worker implements WorkerInterface
           $finished = true;
           foreach ($task->getChildren() as $child)
           {
-            /* @var $child \Libcast\Job\Task\TaskInterface */
+            /* @var $child \Libcast\JobQueue\Task\TaskInterface */
 
             // insert parent id to be able to follow children and flag the
             // parent Task as finished

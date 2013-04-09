@@ -1,15 +1,15 @@
 <?php
 
-namespace Libcast\Job\Queue;
+namespace Libcast\JobQueue\Queue;
 
-use Libcast\Job\Exception\QueueException;
-use Libcast\Job\Queue\AbstractQueue;
-use Libcast\Job\Queue\QueueInterface;
+use Libcast\JobQueue\Exception\QueueException;
+use Libcast\JobQueue\Queue\AbstractQueue;
+use Libcast\JobQueue\Queue\QueueInterface;
 
-use Libcast\Job\Job\NullJob;
+use Libcast\JobQueue\Job\NullJob;
 
-use Libcast\Job\Task\Task;
-use Libcast\Job\Task\TaskInterface;
+use Libcast\JobQueue\Task\Task;
+use Libcast\JobQueue\Task\TaskInterface;
 
 /**
  * Redis Queue uses the following keys:
@@ -27,7 +27,7 @@ use Libcast\Job\Task\TaskInterface;
  */
 class RedisQueue extends AbstractQueue implements QueueInterface
 {
-  const PREFIX = 'libcast:encoding:';
+  const PREFIX = 'libcast:jobqueue:';
   
   protected $client = null;
 
@@ -405,6 +405,19 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     if ($enqueued = $this->client->get(self::PREFIX."task:$id"))
     {
       return Task::jsonImport($enqueued);
+    }
+
+    // get from finished Tasks
+    if ($this->client->lrem(self::PREFIX.'task:finished', 0, $id))
+    {
+      $this->client->lpush(self::PREFIX.'task:finished', $id);
+
+      $task = new Task(new NullJob);
+      $task->setId($id);
+      $task->setStatus(Task::STATUS_FINISHED);
+      $task->setProgress(1);
+
+      return $task;
     }
 
     // get Scheduled Tasks

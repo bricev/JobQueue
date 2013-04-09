@@ -1,6 +1,6 @@
 <?php
 
-namespace Libcast\Job\Command;
+namespace Libcast\JobQueue\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -8,8 +8,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-use Libcast\Job\Exception\CommandException;
-use Libcast\Job\Queue\QueueFactory;
+use Libcast\JobQueue\Exception\CommandException;
+use Libcast\JobQueue\Queue\QueueFactory;
 
 class JobCommand extends Command
 {
@@ -28,7 +28,7 @@ class JobCommand extends Command
   }
   
   /**
-   * @return \Libcast\Job\Queue\QueueInterface
+   * @return \Libcast\JobQueue\Queue\QueueInterface
    */
   protected function getQueue(InputInterface $input)
   {
@@ -50,7 +50,7 @@ class JobCommand extends Command
               $queueConfiguration
       );
 
-      $this->queue = $queueFactory->getQueue(); /* @var $queue \Libcast\Job\Queue\RedisQueue */
+      $this->queue = $queueFactory->getQueue(); /* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
     }
     
     return $this->queue;

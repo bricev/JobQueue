@@ -1,8 +1,8 @@
 <?php
 
-namespace Libcast\Job\Queue;
+namespace Libcast\JobQueue\Queue;
 
-use Libcast\Job\Task\TaskInterface;
+use Libcast\JobQueue\Task\TaskInterface;
 
 use Psr\Log\LoggerInterface;
 
@@ -11,7 +11,7 @@ interface QueueInterface
   /**
    * Register the Task, persist Task data
    * 
-   * @param \Libcast\Job\Task\TaskInterface $task
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
    * @return int Task identifier
    */
   public function add(TaskInterface $task);
@@ -23,8 +23,8 @@ interface QueueInterface
    * - save finished Tasks for later stats
    * - makes sure all child Tasks are finished before parent Task is finished
    * 
-   * @param \Libcast\Job\Task\TaskInterface $task 
-   * @throws \Libcast\Job\Exception\QueueException
+   * @param \Libcast\JobQueue\Task\TaskInterface $task 
+   * @throws \Libcast\JobQueue\Exception\QueueException
    */
   public function update(TaskInterface $task);
   
@@ -34,7 +34,7 @@ interface QueueInterface
    * - "failed"   : helps keep Task data in Queue for later retry
    * - "waiting"  : to (re)send Task in Queue
    * 
-   * @param \Libcast\Job\Task\TaskInterface $task 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task 
    * @param string                          $persist waiting|encoding|failed
    */
   public function flag(TaskInterface $task, $action = null);
@@ -42,7 +42,7 @@ interface QueueInterface
   /**
    * Remove Task from Queue
    * 
-   * @param \Libcast\Job\Task\TaskInterface $task
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
    */
   public function remove(TaskInterface $task);
 
@@ -70,7 +70,7 @@ interface QueueInterface
    * Retrieve a Task from Queue based on its Id.
    * 
    * @param int $id
-   * @return \Libcast\Job\Task\TaskInterface|null
+   * @return \Libcast\JobQueue\Task\TaskInterface|null
    */
   public function getTask($id);
   
@@ -86,7 +86,7 @@ interface QueueInterface
    * Pick the next Task (ordered by set, priority)
    * 
    * @param string $set The set in whick Tasks must be selected
-   * @return \Libcast\Job\Task\TaskInterface|null
+   * @return \Libcast\JobQueue\Task\TaskInterface|null
    */
   public function getNextTask($set = null);
   

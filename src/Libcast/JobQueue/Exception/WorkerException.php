@@ -1,6 +1,6 @@
 <?php
 
-namespace Libcast\Job\Exception;
+namespace Libcast\JobQueue\Exception;
 
 class WorkerException extends \Exception
 {

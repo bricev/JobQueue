@@ -1,11 +1,11 @@
 <?php
 
-namespace Libcast\Job\Job;
+namespace Libcast\JobQueue\Job;
 
-use Libcast\Job\Exception\JobException;
-use Libcast\Job\Job\AbstractJob;
-use Libcast\Job\Job\JobInterface;
-use Libcast\Job\Queue\AbstractQueue;
+use Libcast\JobQueue\Exception\JobException;
+use Libcast\JobQueue\Job\AbstractJob;
+use Libcast\JobQueue\Job\JobInterface;
+use Libcast\JobQueue\Queue\AbstractQueue;
 
 class NullJob extends AbstractJob implements JobInterface
 {

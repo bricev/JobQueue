@@ -1,12 +1,12 @@
 <?php
 
-namespace Libcast\Job\Job;
+namespace Libcast\JobQueue\Job;
 
-use Libcast\Job\Exception\JobException;
-use Libcast\Job\Job\JobInterface;
-use Libcast\Job\Queue\QueueInterface;
-use Libcast\Job\Queue\AbstractQueue;
-use Libcast\Job\Task\TaskInterface;
+use Libcast\JobQueue\Exception\JobException;
+use Libcast\JobQueue\Job\JobInterface;
+use Libcast\JobQueue\Queue\QueueInterface;
+use Libcast\JobQueue\Queue\AbstractQueue;
+use Libcast\JobQueue\Task\TaskInterface;
 
 use Psr\Log\LoggerInterface;
 
@@ -18,12 +18,12 @@ abstract class AbstractJob implements JobInterface
   protected $name;
 
   /**
-   * @var \Libcast\Job\Queue\QueueFactory
+   * @var \Libcast\JobQueue\Queue\QueueFactory
    */
   protected $queue = null;
   
   /**
-   * @var \Libcast\Job\Task\Task
+   * @var \Libcast\JobQueue\Task\Task
    */
   protected $task = null;
   

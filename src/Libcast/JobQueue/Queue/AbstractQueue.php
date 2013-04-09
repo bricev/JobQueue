@@ -1,9 +1,9 @@
 <?php
 
-namespace Libcast\Job\Queue;
+namespace Libcast\JobQueue\Queue;
 
-use Libcast\Job\Queue\QueueInterface;
-use Libcast\Job\Exception\QueueException;
+use Libcast\JobQueue\Queue\QueueInterface;
+use Libcast\JobQueue\Exception\QueueException;
 
 use Psr\Log\LoggerInterface;
 

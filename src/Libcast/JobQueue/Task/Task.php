@@ -1,10 +1,10 @@
 <?php
 
-namespace Libcast\Job\Task;
+namespace Libcast\JobQueue\Task;
 
-use Libcast\Job\Exception\TaskException;
-use Libcast\Job\Job\JobInterface;
-use Libcast\Job\Task\TaskInterface;
+use Libcast\JobQueue\Exception\TaskException;
+use Libcast\JobQueue\Job\JobInterface;
+use Libcast\JobQueue\Task\TaskInterface;
 
 class Task implements TaskInterface
 {
@@ -81,7 +81,7 @@ class Task implements TaskInterface
    * Required parameters may be required depending on the Job associated
    * with this Task
    * 
-   * @param \Libcast\Job\Job\JobInterface $job          Affect a job to the task
+   * @param \Libcast\JobQueue\Job\JobInterface $job          Affect a job to the task
    * @param array                         $options      Task options
    * @param array                         $parameters   Task parameters
    */
@@ -93,6 +93,18 @@ class Task implements TaskInterface
   }
 
   public static function getStatuses()
+  {
+    return array(
+        self::STATUS_PENDING,
+        self::STATUS_WAITING,
+        self::STATUS_RUNNING,
+        self::STATUS_SUCCESS,
+        self::STATUS_FAILED,
+        self::STATUS_FINISHED,
+    );
+  }
+
+  public static function getFakeTaskStatuses()
   {
     return array(
         self::STATUS_PENDING,
@@ -146,7 +158,7 @@ class Task implements TaskInterface
 
   /**
    * 
-   * @return \Libcast\Job\Job\JobInterface $job
+   * @return \Libcast\JobQueue\Job\JobInterface $job
    */
   public function getJob()
   {
@@ -223,14 +235,14 @@ class Task implements TaskInterface
     }
   }
 
-  protected function getCreatedAt($human_readable = true)
+  public function getCreatedAt($human_readable = true)
   {
     if (!$this->created_at)
     {
       $this->setCreatedAt();
     }
     
-    return $human_readable ? date('Y-m-d H:i:s') : (int) $this->scheduled_at;
+    return $human_readable ? date('Y-m-d H:i:s', $this->created_at) : (int) $this->created_at;
   }
 
   public function setScheduledAt($string = null)
@@ -249,7 +261,12 @@ class Task implements TaskInterface
 
   public function getScheduledAt($human_readable = true)
   {
-    return $human_readable ? date('Y-m-d H:i:s') : (int) $this->scheduled_at;
+    if (!$this->scheduled_at)
+    {
+      return null;
+    }
+
+    return $human_readable ? date('Y-m-d H:i:s', $this->scheduled_at) : (int) $this->scheduled_at;
   }
 
   public function setOptions($options)
@@ -352,8 +369,8 @@ class Task implements TaskInterface
     $task->setParentId($data['parent_id']);
     $task->setStatus($data['status']);
     $task->setProgress($data['progress']);
-    $task->setCreatedAt($data['created_at']);
-    $task->setScheduledAt($data['scheduled_at']);
+    $task->setCreatedAt(date('Y-m-d H:i:s', $data['created_at']));
+    $task->setScheduledAt(date('Y-m-d H:i:s', $data['scheduled_at']));
     
     foreach ($data['children'] as $child)
     {
@@ -372,8 +389,8 @@ class Task implements TaskInterface
         'job'           => $this->getJob()->getClassName(),
         'status'        => $this->getStatus(),
         'progress'      => $this->getProgress(),
-        'created_at'    => $this->getCreatedAt(),
-        'scheduled_at'  => $this->getScheduledAt(),
+        'created_at'    => $this->getCreatedAt(false),
+        'scheduled_at'  => $this->getScheduledAt(false),
         'options'       => $this->getOptions(),
         'parameters'    => $this->getParameters(),
         'children'      => array(),

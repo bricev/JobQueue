@@ -1,10 +1,10 @@
 <?php
 
-namespace Libcast\Job\Job;
+namespace Libcast\JobQueue\Job;
 
-use Libcast\Job\Exception\JobException;
-use Libcast\Job\Job\AbstractJob;
-use Libcast\Job\Job\JobInterface;
+use Libcast\JobQueue\Exception\JobException;
+use Libcast\JobQueue\Job\AbstractJob;
+use Libcast\JobQueue\Job\JobInterface;
 
 /**
  * This is a Job class example.
@@ -28,11 +28,11 @@ use Libcast\Job\Job\JobInterface;
  *   * postRun() is executed after the Job
  *     - should run parent method at some point
  */
-class FailingJob extends AbstractJob implements JobInterface
+class FaultyJob extends AbstractJob implements JobInterface
 {
   protected function initialize()
   {
-    $this->setName('Failing Job (for test only)');
+    $this->setName('Faulty Job (for test only)');
 
     $this->setOptions(array(
         'priority'  => 1,
@@ -47,7 +47,21 @@ class FailingJob extends AbstractJob implements JobInterface
 
   protected function run()
   {
-    throw new JobException('FailingJob failed!');
+    $max = rand(2, 5);
+    for ($i = 1; $i <= $max; $i++)
+    {
+      $time = time();
+      exec("echo '{$this->getParameter('dummytext')}:$time' >> {$this->getParameter('destination')}");
+
+      if (rand(0, 100000) > 40000) 
+      {
+        throw new JobException('FaultyJob random error!');
+      }
+
+      $this->setTaskProgress($i/$max);
+
+      sleep(1);
+    }
 
     return parent::run();
   }

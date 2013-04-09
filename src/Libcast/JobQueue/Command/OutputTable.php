@@ -1,8 +1,8 @@
 <?php
 
-namespace Libcast\Job\Command;
+namespace Libcast\JobQueue\Command;
 
-use Libcast\Job\Exception\CommandException;
+use Libcast\JobQueue\Exception\CommandException;
 
 class OutputTable
 {

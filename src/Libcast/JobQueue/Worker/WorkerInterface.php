@@ -1,6 +1,6 @@
 <?php
 
-namespace Libcast\Job\Worker;
+namespace Libcast\JobQueue\Worker;
 
 interface WorkerInterface
 {
@@ -12,7 +12,7 @@ interface WorkerInterface
    * Infinite loop.
    * This method should be used in a daemonized application.
    * 
-   * @throws \Libcast\Job\Exception\WorkerException
+   * @throws \Libcast\JobQueue\Exception\WorkerException
    */
   public function run();
 }

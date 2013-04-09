@@ -1,6 +1,6 @@
 <?php
 
-namespace Libcast\Job\Command;
+namespace Libcast\JobQueue\Command;
 
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -8,8 +8,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
-use Libcast\Job\Command\JobCommand;
-use Libcast\Job\Command\OutputTable;
+use Libcast\JobQueue\Exception\CommandException;
+use Libcast\JobQueue\Command\JobCommand;
+use Libcast\JobQueue\Command\OutputTable;
+use Libcast\JobQueue\Task\Task;
 
 class EditJobCommand extends JobCommand
 {
@@ -66,6 +68,11 @@ class EditJobCommand extends JobCommand
     
     if ($update)
     {
+      if (in_array($task->getStatus(), Task::getFakeTaskStatuses()))
+      {
+        throw new CommandException('This Task can\' be update.');
+      }
+
       $header = "Task '$task' has been updated.";
       $queue->update($task);
     }
@@ -85,6 +92,18 @@ class EditJobCommand extends JobCommand
     $table->addRow(array(
         'Key'   => 'Parent Id',
         'Value' => $task->getParentId(),
+    ));
+    $table->addRow(array(
+        'Key'   => 'Created at',
+        'Value' => $task->getCreatedAt(),
+    ));
+    $table->addRow(array(
+        'Key'   => 'Scheduled at',
+        'Value' => $task->getScheduledAt(),
+    ));
+    $table->addRow(array(
+        'Key'   => 'Job',
+        'Value' => $task->getJob()->getClassName(),
     ));
     $table->addRow(array(
         'Key'   => 'Priority',

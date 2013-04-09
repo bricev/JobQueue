@@ -1,8 +1,8 @@
 <?php
 
-namespace Libcast\Job\Queue;
+namespace Libcast\JobQueue\Queue;
 
-use Libcast\Job\Exception\QueueException;
+use Libcast\JobQueue\Exception\QueueException;
 
 class QueueFactory 
 {
@@ -18,7 +18,7 @@ class QueueFactory
   function __construct($provider, array $parameters = array(), $logger = null)
   {
     $provider = ucfirst(strtolower($provider));
-    $queue_class = sprintf('Libcast\\Job\\Queue\\%sQueue', $provider);
+    $queue_class = sprintf('Libcast\\JobQueue\\Queue\\%sQueue', $provider);
 
     if (!class_exists($queue_class))
     {
@@ -29,7 +29,7 @@ class QueueFactory
   }
   
   /**
-   * @return Libcast\Job\Queue\QueueInterface 
+   * @return Libcast\JobQueue\Queue\QueueInterface 
    */
   public function getQueue()
   {

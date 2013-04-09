@@ -1,15 +1,15 @@
 <?php
 
-namespace Libcast\Job\Command;
+namespace Libcast\JobQueue\Command;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
-use Libcast\Job\Command\JobCommand;
-use Libcast\Job\Command\OutputTable;
-use Libcast\Job\Task\Task;
+use Libcast\JobQueue\Command\JobCommand;
+use Libcast\JobQueue\Command\OutputTable;
+use Libcast\JobQueue\Task\Task;
 
 class ListJobCommand extends JobCommand
 {

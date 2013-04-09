@@ -7,8 +7,8 @@
 
 require realpath(__DIR__.'/vendor/autoload.php');
 
-use Libcast\Job\Command\ListJobCommand;
-use Libcast\Job\Command\EditJobCommand;
+use Libcast\JobQueue\Command\ListJobCommand;
+use Libcast\JobQueue\Command\EditJobCommand;
 use Symfony\Component\Console\Application;
 
 $application = new Application('Libcast Job Queue CLI', '0.1');

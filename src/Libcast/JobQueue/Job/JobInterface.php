@@ -1,9 +1,9 @@
 <?php
 
-namespace Libcast\Job\Job;
+namespace Libcast\JobQueue\Job;
 
-use Libcast\Job\Queue\QueueInterface;
-use Libcast\Job\Task\TaskInterface;
+use Libcast\JobQueue\Queue\QueueInterface;
+use Libcast\JobQueue\Task\TaskInterface;
 
 use Psr\Log\LoggerInterface;
 
@@ -55,8 +55,8 @@ interface JobInterface
    * Setup the Job with its Task, the Queue that stores it and an optional
    * logger
    * 
-   * @param \Libcast\Job\Task\TaskInterface   $task
-   * @param \Libcast\Job\Queue\QueueInterface $queue
+   * @param \Libcast\JobQueue\Task\TaskInterface   $task
+   * @param \Libcast\JobQueue\Queue\QueueInterface $queue
    * @param \Psr\Log\LoggerInterface          $logger
    */
   public function setup(TaskInterface $task, QueueInterface $queue, LoggerInterface $logger = null);

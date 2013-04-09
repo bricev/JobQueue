@@ -6,11 +6,11 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use Libcast\Job\Task\Task;
-use Libcast\Job\Job\DummyJob;
-use Libcast\Job\Job\FaultyJob;
-use Libcast\Job\Job\FailingJob;
-use Libcast\Job\Queue\QueueFactory;
+use Libcast\JobQueue\Task\Task;
+use Libcast\JobQueue\Job\DummyJob;
+use Libcast\JobQueue\Job\FaultyJob;
+use Libcast\JobQueue\Job\FailingJob;
+use Libcast\JobQueue\Queue\QueueFactory;
 
 // ----------
 
@@ -231,7 +231,7 @@ $queueFactory = new QueueFactory(
         array('host' => 'localhost', 'port' => 6379)
 );
 
-$queue = $queueFactory->getQueue(); /* @var $queue \Libcast\Job\Queue\RedisQueue */
+$queue = $queueFactory->getQueue(); /* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
 $queue->add($basic);            // 1
 $queue->add($faulty);           // 2
 $queue->add($failing);          // 3

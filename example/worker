@@ -2,42 +2,40 @@
 <?php
 
 /**
- * This Worker example:
- * - is named 'libcast_worker'
- * - uses Monolog a Logger class
- * - uses a Redis as Queue storage system
+ * This is a Worker example.
+ * This Worker shoul be run as a daemon.
+ * See /example/worker.conf to get an example of an upstart job (Ubuntu/Debian)
  * 
  * The Logger should send logs in both a worker-dedicated and common streams
- * 
- * This Worker shoul be run as a daemon
- * See /example/worker.conf to get an example of an upstart job (Ubuntu/Debian)
  */
 
-$name           = 'libcast_worker';
-$profiles       = array(
-    'dummy-stuff',
+// settings :
+$name                 = 'libcast_worker';       // string
+$profiles             = array('dummy-stuff');   // array of profile(s)
+$component_path       = __DIR__.'/..';          // path to component root
+$logs_path            = __DIR__.'/../log';      // path to logs directory
+$provider             = 'redis';                // DB (only 'redis' for now)
+$provider_parameters  = array(                  // DB settings:
+    'host'            => 'localhost',           // - redis hostname
+    'port'            => 6379,                  // - redis port
 );
-$component_path = __DIR__.'/../';
-
+// end of settings
 
 require realpath("$component_path/vendor/autoload.php");
 
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
-use Libcast\Job\Queue\QueueFactory;
-use Libcast\Job\Worker\Worker;
+use Libcast\JobQueue\Queue\QueueFactory;
+use Libcast\JobQueue\Worker\Worker;
 
 // setup the Monolog logger
 $logger = new Logger($name);
-$logger->pushHandler(new StreamHandler(__DIR__."/../log/$name.log", Logger::DEBUG));
-$logger->pushHandler(new StreamHandler(__DIR__."/../log/common.log", Logger::DEBUG));
+$logger->pushHandler(new StreamHandler("$logs_path/$name.log", Logger::DEBUG));
+$logger->pushHandler(new StreamHandler("$logs_path/common.log", Logger::DEBUG));
 
 // get a Queue instance
-$queueFactory = new QueueFactory('redis', array(
-    'host' => 'localhost',
-    'port' => 6379,
-), $logger);
+$queueFactory = new QueueFactory($provider, $provider_parameters, $logger);
 
 $queue = $queueFactory->getQueue();
 
