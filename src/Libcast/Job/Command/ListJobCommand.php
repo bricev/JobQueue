@@ -17,11 +17,12 @@ class ListJobCommand extends JobCommand
   {
     $this->setName('list:task')->
             setDescription('List Tasks from the Queue')->
-            addOption('sort-by',      'g',  InputOption::VALUE_OPTIONAL, 'Sort by (priority|profile|status)',   'priority')->
-            addOption('order',        'o',  InputOption::VALUE_OPTIONAL, 'Order (asc|desc)',                    'desc')->
-            addOption('priority',     'p',  InputOption::VALUE_OPTIONAL, 'Filter by priority (1, 2, ...)',      null)->
-            addOption('profile',      'f',  InputOption::VALUE_OPTIONAL, 'Filter by profile (eg. "high-cpu")',  null)->
-            addOption('status',       's',  InputOption::VALUE_OPTIONAL, 'Filter by status (pending|waiting|running|success|failed|finished)', null);
+            addOption('sort-by',      't',  InputOption::VALUE_OPTIONAL,  'Sort by (priority|profile|status)',   'priority')->
+            addOption('order',        'o',  InputOption::VALUE_OPTIONAL,  'Order (asc|desc)',                    'desc')->
+            addOption('priority',     'p',  InputOption::VALUE_OPTIONAL,  'Filter by priority (1, 2, ...)',      null)->
+            addOption('profile',      'l',  InputOption::VALUE_OPTIONAL,  'Filter by profile (eg. "high-cpu")',  null)->
+            addOption('status',       's',  InputOption::VALUE_OPTIONAL,  'Filter by status (pending|waiting|running|success|failed|finished)', null)->
+            addOption('follow',       'f',  InputOption::VALUE_NONE,      'Refresh screen, display Queue Tasks in real time');
     
     parent::configure();
   }
@@ -38,7 +39,7 @@ class ListJobCommand extends JobCommand
 
       $output->writeln($this->getLines());
 
-      if (Task::STATUS_FINISHED === $input->getOption('status'))
+      if (!$input->getOption('follow'))
       {
         break;
       }
@@ -71,22 +72,27 @@ class ListJobCommand extends JobCommand
     if ($count)
     {
       $table = new OutputTable;
-      $table->addColumn('Id',         10, OutputTable::RIGHT);
-      $table->addColumn('Parent Id',  10, OutputTable::RIGHT);
-      $table->addColumn('Priority',   3,  OutputTable::RIGHT);
-      $table->addColumn('Profile',    25, OutputTable::LEFT);
-      $table->addColumn('%',          4,  OutputTable::RIGHT);
-      $table->addColumn('Status',     15, OutputTable::LEFT);
+      $table->addColumn('Id',       6, OutputTable::RIGHT);
+      $table->addColumn('Parent',   6, OutputTable::RIGHT);
+      $table->addColumn('Pty',      3,  OutputTable::RIGHT);
+      $table->addColumn('Profile',  18, OutputTable::LEFT);
+      $table->addColumn('Job',      18, OutputTable::LEFT);
+      $table->addColumn('%',        4,  OutputTable::RIGHT);
+      $table->addColumn('Status',   8, OutputTable::LEFT);
       
       foreach ($tasks as $task)
       {
+        $jobArray = explode('\\', $task->getJob());
+        $job = $jobArray[count($jobArray) ? count($jobArray) - 1 : 0];
+
         $table->addRow(array(
-            'Id'          => $task->getId(),
-            'Parent Id'   => $task->getParentId(),
-            'Priority'    => $task->getOption('priority'),
-            'Profile'     => $task->getOption('profile'),
-            '%'           => $task->getProgress(false),
-            'Status'      => $task->getStatus(),
+            'Id'      => $task->getId(),
+            'Parent'  => $task->getParentId(),
+            'Pty'     => $task->getOption('priority'),
+            'Profile' => $task->getOption('profile'),
+            'Job'     => $job,
+            '%'       => $task->getProgress(false),
+            'Status'  => $task->getStatus(),
         ), $task->getStatus());
       }
       
