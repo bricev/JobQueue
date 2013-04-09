@@ -47,6 +47,16 @@ class Task implements TaskInterface
   protected $progress = 0;
 
   /**
+   * @var int
+   */
+  protected $created_at = null;
+
+  /**
+   * @var int
+   */
+  protected $scheduled_at = null;
+
+  /**
    * @var array
    */
   protected $options = array();
@@ -199,6 +209,49 @@ class Task implements TaskInterface
     return $float ? $percent : ($percent * 100).'%';
   }
 
+  protected function setCreatedAt($string = null)
+  {
+    try
+    {
+      $date = new \DateTime($string);
+      
+      $this->created_at = $date->getTimestamp();
+    }
+    catch (\Exception $e)
+    {
+      throw new TaskException("Impossible to set '$string' as date of creation ({$e->getMessage()}).");
+    }
+  }
+
+  protected function getCreatedAt($human_readable = true)
+  {
+    if (!$this->created_at)
+    {
+      $this->setCreatedAt();
+    }
+    
+    return $human_readable ? date('Y-m-d H:i:s') : (int) $this->scheduled_at;
+  }
+
+  public function setScheduledAt($string = null)
+  {
+    try
+    {
+      $date = new \DateTime($string);
+      
+      $this->scheduled_at = $date->getTimestamp();
+    }
+    catch (\Exception $e)
+    {
+      throw new TaskException("Impossible to set '$string' as schedule date ({$e->getMessage()}).");
+    }
+  }
+
+  public function getScheduledAt($human_readable = true)
+  {
+    return $human_readable ? date('Y-m-d H:i:s') : (int) $this->scheduled_at;
+  }
+
   public function setOptions($options)
   {
     if ($job = $this->getJob())
@@ -299,6 +352,8 @@ class Task implements TaskInterface
     $task->setParentId($data['parent_id']);
     $task->setStatus($data['status']);
     $task->setProgress($data['progress']);
+    $task->setCreatedAt($data['created_at']);
+    $task->setScheduledAt($data['scheduled_at']);
     
     foreach ($data['children'] as $child)
     {
@@ -311,15 +366,17 @@ class Task implements TaskInterface
   public function jsonExport()
   {
     $array = array(
-        'id'         => $this->getId(),
-        'tag'        => $this->getTag(),
-        'parent_id'  => $this->getParentId(),
-        'job'        => $this->getJob()->getClassName(),
-        'status'     => $this->getStatus(),
-        'progress'   => $this->getProgress(),
-        'options'    => $this->getOptions(),
-        'parameters' => $this->getParameters(),
-        'children'   => array(),
+        'id'            => $this->getId(),
+        'tag'           => $this->getTag(),
+        'parent_id'     => $this->getParentId(),
+        'job'           => $this->getJob()->getClassName(),
+        'status'        => $this->getStatus(),
+        'progress'      => $this->getProgress(),
+        'created_at'    => $this->getCreatedAt(),
+        'scheduled_at'  => $this->getScheduledAt(),
+        'options'       => $this->getOptions(),
+        'parameters'    => $this->getParameters(),
+        'children'      => array(),
     );
     
     foreach ($this->getChildren() as $child)

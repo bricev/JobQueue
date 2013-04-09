@@ -1,13 +1,18 @@
 <?php
 
-error_reporting(E_ALL);
+/**
+ * Here are some examples on how to submit Tasks to the Queue :
+ */
 
-require __DIR__.'/vendor/autoload.php';
+require __DIR__.'/../vendor/autoload.php';
 
 use Libcast\Job\Task\Task;
 use Libcast\Job\Job\DummyJob;
 use Libcast\Job\Job\FaultyJob;
+use Libcast\Job\Job\FailingJob;
 use Libcast\Job\Queue\QueueFactory;
+
+// ----------
 
 $basic = new Task(
         new DummyJob,
@@ -26,6 +31,17 @@ $faulty = new Task(
         array(
             'dummytext' => 'bbbbbb',
             'destination' => '/tmp/faultytest2',
+        )
+);
+
+// ----------
+
+$failing = new Task(
+        new FailingJob,
+        array(),
+        array(
+            'dummytext' => 'failed',
+            'destination' => '/tmp/failingtest',
         )
 );
 
@@ -150,6 +166,18 @@ $priority = new Task(
 
 // ----------
 
+$scheduled = new Task(
+        new DummyJob,
+        array(),
+        array(
+            'dummytext' => 'aaaaaa',
+            'destination' => '/tmp/dummytest_scheduled',
+        )
+);
+$scheduled->setScheduledAt(date('Y-m-d H:i:s', time() + 60)); // 1min after
+
+// ----------
+
 $profiled = new Task(
         new DummyJob,
         array(
@@ -206,31 +234,11 @@ $queueFactory = new QueueFactory(
 $queue = $queueFactory->getQueue(); /* @var $queue \Libcast\Job\Queue\RedisQueue */
 $queue->add($basic);            // 1
 $queue->add($faulty);           // 2
-$queue->add($parent_basic);     // 3
-$queue->add($parent_nested);    // 4
-$queue->add($priority);         // 5
-$queue->add($profiled);         // 6
-$queue->add($faulty_profiled);  // 7
-$queue->add($parent_profiled);  // 8
-
-//$task = $queue->getNextTask('dummy-stuff');
-
-//var_dump($task);
-
-//print_children_r($task);
-
-function print_children_r(Task $task, $rank = 0)
-{
-  $id = $task->getId();
-  $job_class = $task->getJob();
-  $job = new $job_class;
-  
-  echo str_repeat('--', $rank) . "-> $id: {$job->getClassName()}\n";
-
-  $rank++;
-
-  foreach ($task->getChildren() as $child)
-  {
-    print_children_r($child, $rank);
-  }
-}
+$queue->add($failing);          // 3
+$queue->add($parent_basic);     // 4
+$queue->add($parent_nested);    // 5
+$queue->add($priority);         // 6
+$queue->add($scheduled);        // 7
+$queue->add($profiled);         // 8
+$queue->add($faulty_profiled);  // 9
+$queue->add($parent_profiled);  // 10

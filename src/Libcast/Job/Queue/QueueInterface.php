@@ -30,12 +30,12 @@ interface QueueInterface
   
   /**
    * Flag the Task as :
-   * - "reserved" : so that only one Worker may treat it
-   * - "failed"   : to keep data in Queue and not loose it's data
-   * - "waiting"  : to re-send Task in Queue
+   * - "reserved" : so that only one Worker may treat each Task (default)
+   * - "failed"   : helps keep Task data in Queue for later retry
+   * - "waiting"  : to (re)send Task in Queue
    * 
    * @param \Libcast\Job\Task\TaskInterface $task 
-   * @param string $persist waiting|encoding|failed
+   * @param string                          $persist waiting|encoding|failed
    */
   public function flag(TaskInterface $task, $action = null);
 
