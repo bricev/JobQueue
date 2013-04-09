@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 
 class Worker implements WorkerInterface
 {
-  const STATUS_WORKING = 'working';
+  const STATUS_BUSY = 'busy';
 
   const STATUS_PAUSED = 'paused';
 
@@ -74,7 +74,7 @@ class Worker implements WorkerInterface
 
   protected function setStatus($status)
   {
-    if (!in_array($status, array(self::STATUS_WORKING, self::STATUS_PAUSED)))
+    if (!in_array($status, array(self::STATUS_BUSY, self::STATUS_PAUSED)))
     {
       throw new WorkerException("Status '$status' does not exists.");
     }
@@ -135,7 +135,7 @@ class Worker implements WorkerInterface
             implode(', ', $this->getProfiles()),
             count($this->getProfiles()) > 1 ? 's' : ''));
 
-    $this->setStatus(self::STATUS_WORKING);
+    $this->setStatus(self::STATUS_BUSY);
 
     while (true)
     {
@@ -143,7 +143,7 @@ class Worker implements WorkerInterface
       {
         /* @var $task \Libcast\Job\Task\TaskInterface */
 
-        $this->setStatus(self::STATUS_WORKING);
+        $this->setStatus(self::STATUS_BUSY);
 
         $this->log("Worker '$this' received Task '{$task->getId()}'", array(
             'tag' =>$task->getTag(),
@@ -153,21 +153,17 @@ class Worker implements WorkerInterface
             'children' => count($task->getChildren()),
         ));
 
-        if (!$queue->flag($task))
-        {
-          throw new WorkerException("The task '{$task->getId()}' can't be reserved.");
-        }
-
-        $job = $task->getJob();
-        $job->setup($task, $queue, $this->getLogger());
-
-        // flag Task as running
+        // mark Task as running
         $task->setStatus(Task::STATUS_RUNNING);
         $queue->update($task);
 
+        // get Job from Task
+        $job = $task->getJob();
+        $job->setup($task, $queue, $this->getLogger());
+
         if ($job->execute())
         {
-          // flag Task as success
+          // mark Task as success
           $task->setStatus(Task::STATUS_SUCCESS);
           $queue->update($task);
 
@@ -187,14 +183,14 @@ class Worker implements WorkerInterface
 
           if ($finished)
           {
-            // flag Task as finished
+            // mark Task as finished
             $task->setStatus(Task::STATUS_FINISHED);
             $queue->update($task);
           }
         }
         else 
         {
-          // flag Task as failed
+          // mark Task as failed
           $task->setStatus(Task::STATUS_FAILED);
           $queue->update($task);
         }
@@ -203,12 +199,12 @@ class Worker implements WorkerInterface
       }
       
       // log pause
-      if (self::STATUS_WORKING === $this->getStatus())
+      if (self::STATUS_BUSY === $this->getStatus())
       {
-        $this->log("Worker '$this' paused.");
+        $this->setStatus(self::STATUS_PAUSED);
+
+        $this->log("Worker '$this' has been paused.");
       }
-      
-      $this->setStatus(self::STATUS_PAUSED);
 
       sleep(15); // no more Task, let's sleep a little bit longer
     }
