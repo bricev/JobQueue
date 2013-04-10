@@ -1,5 +1,5 @@
 {
-    "name": "libcast/job",
+    "name": "libcast/jobqueue",
     "type": "library",
     "description": "Job/Queue system that execute Tasks through Workers",
     "homepage": "http://libcast.com",
