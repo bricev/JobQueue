@@ -8,7 +8,7 @@
         "php": ">=5.3.0",
         "monolog/monolog": "1.4.0",
         "predis/predis": "0.8",
-        "symfony/console": "2.3.*@dev"
+        "symfony/console": "~2.1",
     },    
     "autoload": {
         "psr-0": {"Libcast": "src/"}
