@@ -106,14 +106,6 @@ class EditJobCommand extends JobCommand
         'Value' => $task->getJob()->getClassName(),
     ));
     $table->addRow(array(
-        'Key'   => 'Priority',
-        'Value' => $task->getOption('priority'),
-    ));
-    $table->addRow(array(
-        'Key'   => 'Profile',
-        'Value' => $task->getOption('profile'),
-    ));
-    $table->addRow(array(
         'Key'   => 'Status',
         'Value' => $task->getStatus(),
     ));
@@ -121,7 +113,23 @@ class EditJobCommand extends JobCommand
         'Key'   => 'Progress',
         'Value' => $task->getProgress(false),
     ));
-    
+
+    foreach ($task->getOptions() as $k => $v)
+    {
+      $table->addRow(array(
+          'Key'   => ucfirst($k),
+          'Value' => $v,
+      ));
+    }
+
+    foreach ($task->getParameters() as $k => $v)
+    {
+      $table->addRow(array(
+          'Key'   => ucfirst($k),
+          'Value' => $v,
+      ));
+    }
+
     $this->addLine();
     $this->addLine($header);
     $this->addLine();
