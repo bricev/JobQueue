@@ -480,8 +480,12 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         
         if (count($keys) <= 1)
         {
-          $profiles = $last_profile ? $last_profile : self::COMMON_PROFILE;
-          continue;
+          $one_profile = reset($profiles);
+          $profile = $last_profile ? $last_profile : $one_profile;
+          $key = self::PREFIX."profile:$profile";
+          $delete_key = false;
+
+          break;
         }
         
         // create a temporary sorted list (union of profiles)
