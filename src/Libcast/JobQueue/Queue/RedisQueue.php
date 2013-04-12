@@ -468,12 +468,20 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         
         // union only profiles that are not empty
         $keys = array();
+        $last_profile = null;
         foreach($profiles as $profile)
         {
           if ($this->client->zcount(self::PREFIX."profile:$profile", self::PRIORITY_MIN, '+inf'))
           {
             $keys[] = self::PREFIX."profile:$profile";
+            $last_profile = $profile;
           }
+        }
+        
+        if (count($keys) <= 1)
+        {
+          $profiles = $last_profile ? $last_profile : self::COMMON_PROFILE;
+          continue;
         }
         
         // create a temporary sorted list (union of profiles)
