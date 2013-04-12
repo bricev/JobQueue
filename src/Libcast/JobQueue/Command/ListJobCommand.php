@@ -75,8 +75,8 @@ class ListJobCommand extends JobCommand
       $table->addColumn('Id',       6, OutputTable::RIGHT);
       $table->addColumn('Parent',   6, OutputTable::RIGHT);
       $table->addColumn('Pty',      3,  OutputTable::RIGHT);
-      $table->addColumn('Profile',  18, OutputTable::LEFT);
-      $table->addColumn('Job',      18, OutputTable::LEFT);
+      $table->addColumn('Profile',  12, OutputTable::LEFT);
+      $table->addColumn('Job',      22, OutputTable::LEFT);
       $table->addColumn('%',        4,  OutputTable::RIGHT);
       $table->addColumn('Status',   8, OutputTable::LEFT);
       

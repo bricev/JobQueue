@@ -30,14 +30,14 @@ class OutputTable
   {
     return count($this->columns);
   }
-  
+
   public function addRow(array $cells, $style = null)
   {
     if (count($cells) !== $this->countColumns())
     {
       throw new CommandException('Number of cell is not valid.');
     }
-    
+
     if (count(array_diff(
             array_keys($cells),
             $this->getColumnTitles()
@@ -45,30 +45,30 @@ class OutputTable
     {
       throw new CommandException('One or more cells have a wrong title.');
     }
-    
-    foreach ($cells as $key => $cell)
+
+    foreach ($cells as $column_title => $cell_value)
     {
-      if (!$cell || is_null($cell) || $cell === '')
+      if (!$cell_value || is_null($cell_value) || $cell_value === '')
       {
-        $cells[$key] = '-';
+        $cells[$column_title] = '-';
       }
-      
-      if ($len = strlen($key) > $this->columns[$key]['width'])
+
+      if (strlen($column_title) > (int) $this->columns[$column_title]['width'])
       {
-        $this->columns[$key]['width'] = $len;
+        $this->columns[$column_title]['width'] = strlen($column_title);
       }
-      
-      if ($len = strlen($cell) > $this->columns[$key]['width'])
+
+      if (strlen($cell_value) > (int) $this->columns[$column_title]['width'])
       {
-        $this->columns[$key]['width'] = $len;
+        $this->columns[$column_title]['width'] = strlen($cell_value);
       }
     }
-    
+
     $this->rows[] = $cells;
-    
+
     $this->row_style[] = $style ? $style : '#';
   }
-  
+
   protected function countRows()
   {
     return count($this->rows);
