@@ -25,6 +25,13 @@ interface JobInterface
 
   /**
    * 
+   * @param string $option
+   * @return bool
+   */
+  public function hasOption($option);
+  
+  /**
+   * 
    * @return array Options
    */
   public function getOptions();
@@ -37,6 +44,13 @@ interface JobInterface
    */
   public function getOption($name);
 
+  /**
+   * 
+   * @param string $parameter
+   * @return bool
+   */
+  public function hasParameter($parameter);
+  
   /**
    * 
    * @return array Parameters

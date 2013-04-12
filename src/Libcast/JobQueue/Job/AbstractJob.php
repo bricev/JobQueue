@@ -81,6 +81,11 @@ abstract class AbstractJob implements JobInterface
     $this->options = array_merge($this->options, (array) $options);
   }
 
+  public function hasOption($option)
+  {
+    return in_array($option, array_keys($this->getOptions()));
+  }
+
   public function getOptions()
   {
     return $this->options;
@@ -110,6 +115,11 @@ abstract class AbstractJob implements JobInterface
     $this->parameters = array_merge($this->parameters, (array) $parameters);
   }
   
+  public function hasParameter($parameter)
+  {
+    return in_array($parameter, array_keys($this->getParameters()));
+  }
+
   public function getParameters()
   {
     return $this->parameters;
