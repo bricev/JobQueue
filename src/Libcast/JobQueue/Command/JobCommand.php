@@ -22,8 +22,8 @@ class JobCommand extends Command
     $this->
             addOption('queue-provider', null, InputOption::VALUE_OPTIONAL, 'Provider', 'redis')->
             addOption('queue-conf',     null, InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'Configuration (Eg. host:localhost)', array(
-                'host' => 'localhost',
-                'port' => 6379,
+                'host:localhost',
+                'port:6379',
             ));
   }
   
