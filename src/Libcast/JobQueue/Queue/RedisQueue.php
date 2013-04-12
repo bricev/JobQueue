@@ -123,6 +123,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       if ($fail_count < self::MAX_REQUEUE)
       {
         $task->setStatus(Task::STATUS_WAITING);
+        $task->setScheduledAt(date('Y-m-d H:i:s', time() + 60)); // retry in 1 minute
         $this->update($task);
 
         $this->log(sprintf('Failed Task \'%d\' has been given another chance (%d/%d)',

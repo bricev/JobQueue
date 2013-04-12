@@ -11,7 +11,7 @@ abstract class AbstractQueue implements QueueInterface
 {
   const COMMON_PROFILE = 'common';
   
-  const MAX_REQUEUE = 10;
+  const MAX_REQUEUE = 3;
 
   const PRIORITY_FAILED = -1;
   
