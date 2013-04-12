@@ -108,9 +108,6 @@ class Task implements TaskInterface
   {
     return array(
         self::STATUS_PENDING,
-        self::STATUS_WAITING,
-        self::STATUS_RUNNING,
-        self::STATUS_SUCCESS,
         self::STATUS_FAILED,
         self::STATUS_FINISHED,
     );
