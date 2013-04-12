@@ -43,7 +43,7 @@ class OutputTable
             $this->getColumnTitles()
     )))
     {
-      throw new CommandException('One or many cells have not valid title.');
+      throw new CommandException('One or more cells have a wrong title.');
     }
     
     foreach ($cells as $key => $cell)
@@ -51,6 +51,16 @@ class OutputTable
       if (!$cell || is_null($cell) || $cell === '')
       {
         $cells[$key] = '-';
+      }
+      
+      if ($len = strlen($key) > $this->columns[$key]['width'])
+      {
+        $this->columns[$key]['width'] = $len;
+      }
+      
+      if ($len = strlen($cell) > $this->columns[$key]['width'])
+      {
+        $this->columns[$key]['width'] = $len;
       }
     }
     
