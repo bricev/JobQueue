@@ -106,13 +106,13 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     // reserve Tasks that are marked as 'running'
     if (Task::STATUS_RUNNING === $task->getStatus())
     {
-        $this->flag($task);
+      $this->flag($task);
     }
 
     // make sure Tasks is flaged as 'waiting' when requeued
     if (Task::STATUS_WAITING === $task->getStatus())
     {
-        $this->flag($task, Task::STATUS_WAITING);
+      $this->flag($task, Task::STATUS_WAITING);
     }
 
     // try again (requeue) failed Tasks
@@ -122,15 +122,15 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       
       if ($fail_count < self::MAX_REQUEUE)
       {
-        $task->setStatus(Task::STATUS_WAITING);
-        $task->setScheduledAt(date('Y-m-d H:i:s', time() + 60)); // retry in 1 minute
-        $this->update($task);
-
         $this->log(sprintf('Failed Task \'%d\' has been given another chance (%d/%d)',
                 $task->getId(),
                 $fail_count,
                 self::MAX_REQUEUE));
-        
+
+        $task->setStatus(Task::STATUS_WAITING);
+        $task->setScheduledAt(date('Y-m-d H:i:s', time() + 60)); // retry in 1 minute
+        $this->update($task);
+
         return true;
       }
       else
@@ -143,12 +143,12 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
         $this->log("Failed Task '{$task->getId()}' can't be treated : Worker gived up.");
 
-        // set parent Task as failed (if any)
-        if ($parent)
-        {
-          $parent->setStatus(Task::STATUS_FAILED);
-          $this->update($parent);
-        }
+//        // set parent Task as failed (if any)
+//        if ($parent)
+//        {
+//          $parent->setStatus(Task::STATUS_FAILED);
+//          $this->update($parent);
+//        }
       }
     }
 
@@ -427,7 +427,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       return Task::jsonImport($scheduled);
     }
 
-    throw new QueueException("There is no Task for '$id' Id.");
+    return null;
   }
 
   public function getTaskStatus($id)
@@ -435,20 +435,21 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     // if Task is currently in Queue, return its status
     if ($task = $this->getTask($id))
     {
+      foreach ($task->getChildren() as $child)
+      {
+        if (Task::STATUS_FAILED === $this->getTaskStatus($child->getId()))
+        {
+          return Task::STATUS_FAILED;
+        }
+      }
+
       return $task->getStatus();
-    }
-    
-    // if Task has been registred as finished, return STATUS_FINISHED
-    elseif ($this->client->lrem(self::PREFIX.'task:finished', 0, $id))
-    {
-      $this->client->lpush(self::PREFIX.'task:finished', $task->getId());
-      return Task::STATUS_FINISHED;
     }
     
     // else return STATUS_PENDING
     else 
     {
-      Task::STATUS_PENDING;
+      return Task::STATUS_PENDING;
     }
   }
 
