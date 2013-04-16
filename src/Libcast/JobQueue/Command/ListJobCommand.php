@@ -79,7 +79,7 @@ class ListJobCommand extends JobCommand
       $table->addColumn('Job',      22, OutputTable::LEFT);
       $table->addColumn('%',        4,  OutputTable::RIGHT);
       $table->addColumn('Status',   8, OutputTable::LEFT);
-      
+
       foreach ($tasks as $task)
       {
         $jobArray = explode('\\', $task->getJob());
@@ -93,9 +93,9 @@ class ListJobCommand extends JobCommand
             'Job'     => $job,
             '%'       => $task->getProgress(false),
             'Status'  => $task->getStatus(),
-        ), $task->getStatus());
+        ), $queue->getTaskStatus($task->getId()));
       }
-      
+
       $output->getFormatter()->setStyle('waiting',  new OutputFormatterStyle('blue'));
       $output->getFormatter()->setStyle('running',  new OutputFormatterStyle('blue', 'cyan', array('bold', 'blink')));
       $output->getFormatter()->setStyle('failed',   new OutputFormatterStyle('red'));
