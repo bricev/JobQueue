@@ -12,9 +12,18 @@ interface QueueInterface
    * Register the Task, persist Task data
    * 
    * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @param bool $first False if Task is added for the nth time
    * @return int Task identifier
    */
-  public function add(TaskInterface $task);
+  public function add(TaskInterface $task, $first = true);
+  
+  /**
+   * Keep a Task's data aside so that it can be execuetd later
+   * 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @param timestamp $date
+   */
+  public function schedule(TaskInterface $task, $date);
   
   /**
    * Persist updated Task Data, perform extra actions dependint on Task status:
@@ -45,13 +54,6 @@ interface QueueInterface
    * @param \Libcast\JobQueue\Task\TaskInterface $task
    */
   public function remove(TaskInterface $task);
-
-  /**
-   * Lists all sort options that may be used to sort self:getTasks results
-   * 
-   * @return array
-   */
-  public static function getSortByOptions();
 
   /**
    * Lists all Tasks from Queue
