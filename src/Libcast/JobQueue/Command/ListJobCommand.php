@@ -96,6 +96,7 @@ class ListJobCommand extends JobCommand
         ), $queue->getTaskStatus($task->getId()));
       }
 
+      $output->getFormatter()->setStyle('pending',  new OutputFormatterStyle('white'));
       $output->getFormatter()->setStyle('waiting',  new OutputFormatterStyle('blue'));
       $output->getFormatter()->setStyle('running',  new OutputFormatterStyle('blue', 'cyan', array('bold', 'blink')));
       $output->getFormatter()->setStyle('failed',   new OutputFormatterStyle('red'));
