@@ -28,7 +28,7 @@ use Libcast\JobQueue\Task\TaskInterface;
 class RedisQueue extends AbstractQueue implements QueueInterface
 {
   const PREFIX = 'libcast:jobqueue:';
-  
+
   protected $client = null;
 
   protected function connect()
@@ -40,18 +40,21 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     ));
   }
 
-  public function add(TaskInterface $task)
+  public function add(TaskInterface $task, $first = true)
   {
-    $task->setStatus(Task::STATUS_WAITING);
-
-    // give the Task a uniq ID
-    $task->setId($id = $this->client->incr(self::PREFIX.'task:lastid'));
+    // give the Task a uniq Id
+    if (!$task->getId())
+    {
+      $task->setId($id = $this->client->incr(self::PREFIX.'task:lastid'));
+    }
 
     $pipe = $this->client->pipeline();
 
     // only put in Queue non scheduled or immediate Tasks
     if (!$task->getScheduledAt() || $task->getScheduledAt(false) <= time())
     {
+      $task->setStatus(Task::STATUS_WAITING);
+
       // store Task data
       $pipe->set(self::PREFIX."task:{$task->getId()}", $task->jsonExport());
 
@@ -67,16 +70,11 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     }
     else
     {
-      // store Task data
-      $pipe->set(self::PREFIX."task:scheduled:{$task->getId()}", $task->jsonExport());
-
-      $pipe->zadd(self::PREFIX.'task:scheduled', 
-              $task->getScheduledAt(false),
-              $task->getId());
+      $this->schedule($task, $task->getScheduledAt(false));
     }
 
-    // count children
-    if ($parent_id = $task->getParentId())
+    // count children only the first time a Task is added
+    if ($first && $parent_id = $task->getParentId())
     {
       $pipe->incr(self::PREFIX."task:children:$parent_id");
     }
@@ -84,6 +82,42 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     $pipe->execute();
 
     return $id;
+  }
+
+  public function schedule(TaskInterface $task, $date)
+  {
+    $task->setStatus(Task::STATUS_PENDING);
+    $task->setScheduledAt(date('Y-m-d H:i:s', $date));
+
+    // remove Task from Queue
+    $this->remove($task);
+
+    $pipe = $this->client->pipeline();
+
+    // store Task data in a dedicated key
+    $pipe->set(self::PREFIX."task:scheduled:{$task->getId()}", $task->jsonExport());
+
+    // add Task to sheduled set with time as score
+    $pipe->zadd(self::PREFIX.'task:scheduled', 
+            $task->getScheduledAt(false),
+            $task->getId());
+
+    return $pipe->execute();
+  }
+
+  public function unschedule(TaskInterface $task)
+  {
+    $pipe = $this->client->pipeline();
+
+    // store Task data in a dedicated key
+    $pipe->del(self::PREFIX."task:scheduled:{$task->getId()}");
+
+    // add Task to sheduled set with time as score
+    $pipe->zrem(self::PREFIX.'task:scheduled', $task->getId());
+
+    $pipe->execute();
+
+    return $this->add($task, false);
   }
 
   public function update(TaskInterface $task)
@@ -119,7 +153,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     if (Task::STATUS_FAILED === $task->getStatus())
     {
       $fail_count = $this->client->incr(self::PREFIX."task:failed:{$task->getId()}");
-      
+
       if ($fail_count < self::MAX_REQUEUE)
       {
         $this->log(sprintf('Failed Task \'%d\' has been given another chance (%d/%d)',
@@ -127,9 +161,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
                 $fail_count,
                 self::MAX_REQUEUE));
 
-        $task->setStatus(Task::STATUS_WAITING);
-        $task->setScheduledAt(date('Y-m-d H:i:s', time() + 60)); // retry in 1 minute
-        $this->update($task);
+        $this->schedule($task, time() + 10);
 
         return true;
       }
@@ -141,14 +173,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         // delete requeue count
         $this->client->del(self::PREFIX."task:failed:{$task->getId()}");
 
-        $this->log("Failed Task '{$task->getId()}' can't be treated : Worker gived up.");
-
-//        // set parent Task as failed (if any)
-//        if ($parent)
-//        {
-//          $parent->setStatus(Task::STATUS_FAILED);
-//          $this->update($parent);
-//        }
+        $this->log("Task '{$task->getId()}' failed $fail_count times : Worker gived up.");
       }
     }
 
@@ -217,20 +242,16 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
   public function remove(TaskInterface $task)
   {
-    if (!$this->client->get(self::PREFIX."task:{$task->getId()}"))
+    if (!$task->getId())
     {
       return false;
     }
 
     $pipe = $this->client->pipeline();
-    
-    // delete Task
+
     $pipe->del(self::PREFIX."task:{$task->getId()}");
     $pipe->zrem(self::PREFIX."profile:{$task->getOption('profile')}", $task->getId());
     $pipe->zrem(self::PREFIX.'profile:'.self::COMMON_PROFILE, $task->getId());
-
-    // delete failed attempts count if any
-    $pipe->del(self::PREFIX."task:failed:{$task->getId()}");
 
     return $pipe->execute();
   }
@@ -241,7 +262,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     {
       $sort_by = self::SORT_BY_PRIORITY;
     }
-    
+
     if (!$sort_order)
     {
       $sort_order = self::ORDER_ASC;
@@ -268,12 +289,23 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       throw new QueueException("Priority '$priority' is not valid.");
     }
 
-    $groups = array();
+    $tasks = array();
 
     // Queue does not store pending Tasks
-    if (Task::STATUS_PENDING === $status)
+    // Sheduled Tasks are pending
+    if (Task::STATUS_PENDING === $status || !$status)
     {
-      return array();
+      foreach ($this->client->zrange(self::PREFIX.'task:scheduled', 0, -1) as $id)
+      {
+        $task = $this->getTask($id);
+        if ($task && 
+                (self::COMMON_PROFILE === $profile || $profile === $task->getOption('profile')) &&
+                (!$priority || $priority === $task->getOption('priority')) &&
+                (!$status || $status === $task->getStatus()))
+        {
+          $tasks[] = $task;
+        }
+      }
     }
 
     // Queue stores waiting Tasks with a positive score
@@ -286,29 +318,13 @@ class RedisQueue extends AbstractQueue implements QueueInterface
               $priority ? $priority : self::PRIORITY_MIN) as $id)
       {
         $task = $this->getTask($id);
-
-        if (!$status || $status === $task->getStatus())
+        if ($task && (!$status || $status === $task->getStatus()))
         {
-          switch ($sort_by)
-          {
-            case self::SORT_BY_PROFILE:
-              $sort = $task->getOption('profile');
-              break;
-
-            case self::SORT_BY_STATUS:
-              $sort = $task->getStatus();
-              break;
-
-            case self::SORT_BY_PRIORITY: 
-            default :
-              $sort = $task->getOption('priority');
-          }
-
-          $groups[$sort][$id] = $task;
+          $tasks[] = $task;
         }
       }
     }
-    
+
     // Queue stores running and successfull Tasks the same way until Task is
     // finished. Failed Tasks are immediately requeued or remain untouched.
     if (in_array($status, array(
@@ -322,30 +338,15 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       foreach ($this->client->zrangebyscore($key, -1, '(1') as $id)
       {
         $task = $this->getTask($id);
-
-        if ((!$status || $status === $task->getStatus()) &&
+        if ($task &&
+                (!$status || $status === $task->getStatus()) &&
                 (!$priority || $priority === $task->getOption('priority')))
         {
-          switch ($sort_by)
-          {
-            case self::SORT_BY_PROFILE:
-              $sort = $task->getOption('profile');
-              break;
-
-            case self::SORT_BY_STATUS:
-              $sort = $task->getStatus();
-              break;
-
-            case self::SORT_BY_PRIORITY: 
-            default :
-              $sort = $task->getOption('priority');
-          }
-
-          $groups[$sort][$id] = $task;
+          $tasks[] = $task;
         }
       }
     }
-    
+
     // finished Tasks have no data (their ids are just listed) so we have to 
     // create fake Tasks based on NullJob
     if ((Task::STATUS_FINISHED === $status) && // we only return finished Tasks if $status = finished
@@ -358,46 +359,54 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         $task->setStatus(Task::STATUS_FINISHED);
         $task->setProgress(1);
 
-        switch ($sort_by)
-        {
-          case self::SORT_BY_PROFILE:
-            $sort = $task->getOption('profile');
-            break;
-
-          case self::SORT_BY_STATUS:
-            $sort = $task->getStatus();
-            break;
-
-          case self::SORT_BY_PRIORITY: 
-          default :
-            $sort = $task->getOption('priority');
-        }
-
-        $groups[$sort][$id] = $task;
+        $tasks[] = $task;
       }
     }
-    
-    // order each 'sort_by' group's members
+
+    // group Tasks by 'sort_by' option
+    $groups = array();
+    foreach ($tasks as $task)
+    {
+      switch ($sort_by)
+      {
+        case self::SORT_BY_PROFILE:
+          $sort = $task->getOption('profile');
+          break;
+
+        case self::SORT_BY_STATUS:
+          $sort = $task->getStatus();
+          break;
+
+        case self::SORT_BY_PRIORITY: 
+        default :
+          $sort = $task->getOption('priority');
+      }
+
+      $groups[$sort][$task->getId()] = $task;
+    }
+
+    // order all members within groups
     foreach ($groups as $key => $array)
     {
       self::ORDER_ASC === $sort_order ? ksort($array) : (self::SORT_BY_PRIORITY === $sort_by ? ksort($array) : krsort($array));
-      
+
       $groups[$key] = $array;
     }
-    
-    // order each 'sort_by' group
+
+    // order each group
     self::ORDER_ASC === $sort_order ? ksort($groups) : krsort($groups);
-    
-    $tasks = array();
+
+    // list Tasks, keeping arrays order
+    $list = array();
     foreach ($groups as $group)
     {
       foreach ($group as $task)
       {
-        $tasks[] = $task;
+        $list[] = $task;
       }
     }
-    
-    return $tasks;
+
+    return $list;
   }
 
   public function getTask($id)
@@ -445,7 +454,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
       return $task->getStatus();
     }
-    
+
     // else return STATUS_PENDING
     else 
     {
@@ -467,7 +476,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         $hash = md5(serialize($profiles));
         $key = self::PREFIX."union:$hash";
         $delete_key = true;
-        
+
         // union only profiles that are not empty
         $keys = array();
         $last_profile = null;
@@ -479,7 +488,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
             $last_profile = $profile;
           }
         }
-        
+
         if (count($keys) <= 1)
         {
           $one_profile = reset($profiles);
@@ -489,7 +498,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
           break;
         }
-        
+
         // create a temporary sorted list (union of profiles)
         call_user_func_array(
                 array($this->client, 'zunionstore'),
@@ -497,9 +506,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
                         array($key, count($keys)), 
                         $keys, 
                         array(array('AGGREGATE MAX'))));
-        
+
         break;
-      
+
       // get next task from a single profile
       case is_string($profiles) || (is_array($profiles) && count($profiles) === 1) :
 
@@ -512,7 +521,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         $delete_key = false;
 
         break;
-      
+
       // get next task from the common queue (all profiles)
       default :
 
@@ -530,7 +539,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       $priority_task_ids  = $this->client->zrevrangebyscore($key, 
               $next_priority, 
               sprintf('(%d', $next_priority - 1));
-      
+
       // sort ids in ASC order to respect FIFO rule
       sort($priority_task_ids);
 
@@ -548,36 +557,18 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     {
       return null;
     }
-    
+
     return Task::jsonImport($this->client->get(self::PREFIX."task:$next_id"));
   }
-  
+
   protected function checkScheduledTasks()
   {
     foreach ($this->client->zrangebyscore(self::PREFIX.'task:scheduled', 0, time()) as $id)
     {
       $task = $this->getTask($id);
 
-      $pipe = $this->client->pipeline();
-
-      // store Task data
-      $pipe->set(self::PREFIX."task:{$task->getId()}", $task->jsonExport());
-
-      // affect Task to its Queue profile's set
-      $pipe->zadd(self::PREFIX."profile:{$task->getOption('profile')}", 
-              $task->getOption('priority'), 
-              $task->getId());
-
-      // add Task to Queue's common set
-      $pipe->zadd(self::PREFIX.'profile:'.self::COMMON_PROFILE, 
-              $task->getOption('priority'), 
-              $task->getId());
-
-      // remove Task from schedule list
-      $pipe->del(self::PREFIX."task:scheduled:{$task->getId()}");
-      $pipe->zrem(self::PREFIX.'task:scheduled', $task->getId());
-
-      $pipe->execute();
+      // enqueue Task
+      $this->unschedule($task);
     }
   }
 }
