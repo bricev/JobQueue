@@ -53,14 +53,14 @@ class FaultyJob extends AbstractJob implements JobInterface
       $time = time();
       exec("echo '{$this->getParameter('dummytext')}:$time' >> {$this->getParameter('destination')}");
 
-      if (rand(0, 100000) > 40000) 
-      {
-        throw new JobException('FaultyJob random error!');
-      }
-
       $this->setTaskProgress($i/$max);
 
       sleep(1);
+    }
+
+    if (rand(0, 100000) > 30000) 
+    {
+      throw new JobException('FaultyJob random error!');
     }
 
     return parent::run();
