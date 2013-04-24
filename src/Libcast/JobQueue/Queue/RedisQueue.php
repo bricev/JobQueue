@@ -149,6 +149,12 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       $this->flag($task, Task::STATUS_WAITING);
     }
 
+    // set progress for successful Tasks
+    if (Task::STATUS_SUCCESS === $task->getStatus())
+    {
+      $task->setProgress(1);
+    }
+
     // try again (requeue) failed Tasks
     if (Task::STATUS_FAILED === $task->getStatus())
     {
@@ -161,7 +167,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
                 $fail_count,
                 self::MAX_REQUEUE));
 
-        $this->schedule($task, time() + 10);
+        $this->schedule($task, time() + 30);
 
         return true;
       }
