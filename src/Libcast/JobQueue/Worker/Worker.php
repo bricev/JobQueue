@@ -81,12 +81,9 @@ class Worker implements WorkerInterface
           case E_USER_NOTICE:
           case E_USER_DEPRECATED:
           case E_STRICT:
-            $method = 'debug';
-            break;
-
           case E_WARNING:
           case E_USER_WARNING:
-            $method = 'warning';
+            $method = 'debug';
             break;
           
           default :
