@@ -85,7 +85,7 @@ class Worker implements WorkerInterface
           case E_USER_WARNING:
             $method = 'debug';
             break;
-          
+
           default :
             $method = 'error';
         }
@@ -258,16 +258,28 @@ class Worker implements WorkerInterface
           $task->setStatus(Task::STATUS_SUCCESS);
           $queue->update($task);
 
-          $finished = true;
-          foreach ($task->getChildren() as $child)
+          // try to enqueue child Tasks, 
+          // mark Task as failed in case of an error
+          try
           {
-            /* @var $child \Libcast\JobQueue\Task\TaskInterface */
+            $finished = true;
+            foreach ($task->getChildren() as $child)
+            {
+              /* @var $child \Libcast\JobQueue\Task\TaskInterface */
+              $child->setParentId($task->getId());
 
-            // insert parent id to be able to follow children and flag the
-            // parent Task as finished
-            $child->setParentId($task->getId());
+              $queue->add($child);
 
-            $id = $queue->add($child);
+              $finished = false;
+            }
+          }
+          catch (\Exception $e)
+          {
+            $this->log("Impossible to add child for Task $task.", array($e->getMessage()));
+
+            // mark Task as failed
+            $task->setStatus(Task::STATUS_FAILED);
+            $queue->update($task);
 
             $finished = false;
           }
