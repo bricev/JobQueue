@@ -11,6 +11,8 @@ use Libcast\JobQueue\Job\NullJob;
 use Libcast\JobQueue\Task\Task;
 use Libcast\JobQueue\Task\TaskInterface;
 
+use Predis\Client;
+
 /**
  * Redis Queue uses the following keys:
  * 
@@ -29,17 +31,26 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 {
   const PREFIX = 'libcast:jobqueue:';
 
-  protected $client = null;
+  /**
+   * @var \Predis\Client
+   */
+  protected $client;
 
+  /**
+   * {@inheritdoc}
+   */
   protected function connect()
   {
-    $this->client = new \Predis\Client(array(
-        'scheme' => $this->getParameters('scheme', 'tcp'), 
-        'host'   => $this->getParameters('host', 'localhost'), 
-        'port'   => $this->getParameters('port', 6379), 
+    $this->client = new Client(array(
+        'scheme' => $this->getParameter('scheme', 'tcp'), 
+        'host'   => $this->getParameter('host', 'localhost'), 
+        'port'   => $this->getParameter('port', 6379), 
     ));
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function add(TaskInterface $task, $first = true)
   {
     // give the Task a uniq Id
@@ -84,6 +95,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return $id;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function schedule(TaskInterface $task, $date)
   {
     $task->setStatus(Task::STATUS_PENDING);
@@ -105,6 +119,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return $pipe->execute();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function unschedule(TaskInterface $task)
   {
     $pipe = $this->client->pipeline();
@@ -120,13 +137,16 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return $this->add($task, false);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function update(TaskInterface $task)
   {
     $this->log("Task '{$task->getId()}' updated", array(
         'status'    => $task->getStatus(),
         'progress'  => $task->getProgress(false),
         'children'  => count($task->getChildren()),
-    ));
+    ), 'debug');
 
     // update parent
     $parent = null;
@@ -212,6 +232,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return $this->client->set(self::PREFIX."task:{$task->getId()}", $task->jsonExport());
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function flag(TaskInterface $task, $action = Task::STATUS_RUNNING)
   {
     // edit set member's score according to priority
@@ -246,6 +269,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return $pipe->execute();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function remove(TaskInterface $task)
   {
     if (!$task->getId())
@@ -262,6 +288,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return $pipe->execute();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getTasks($sort_by = null, $sort_order = null, $priority = null, $profile = null, $status = null)
   {
     if (!$sort_by)
@@ -415,6 +444,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return $list;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getTask($id)
   {
     // get Task from Queue
@@ -445,6 +477,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return null;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getTaskStatus($id)
   {
     // if Task is currently in Queue, return its status
@@ -468,6 +503,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getNextTask($profiles = null)
   {
     // check for scheduled Tasks that needs to be enqueued
@@ -567,6 +605,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     return Task::jsonImport($this->client->get(self::PREFIX."task:$next_id"));
   }
 
+  /**
+   * Enqueue all Tasks scheduled for now
+   */
   protected function checkScheduledTasks()
   {
     foreach ($this->client->zrangebyscore(self::PREFIX.'task:scheduled', 0, time()) as $id)

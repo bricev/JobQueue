@@ -13,11 +13,6 @@ use Psr\Log\LoggerInterface;
 abstract class AbstractJob implements JobInterface
 {
   /**
-   * @var string Name of the Job
-   */
-  protected $name;
-
-  /**
    * @var \Libcast\JobQueue\Queue\QueueFactory
    */
   protected $queue = null;
@@ -52,26 +47,27 @@ abstract class AbstractJob implements JobInterface
     $this->initialize();
   }
 
-  protected function setName($name)
-  {
-    $this->name = (string) $name;
-  }
-
-  public function getName()
-  {
-    return $this->name;
-  }
-
+  /**
+   * {@inheritdoc}
+   */
   public function getClassName()
   {
     return get_class($this);
   }
 
+  /**
+   * 
+   * @param array   $options  Array of required option names
+   */
   protected function setRequiredOptions($options)
   {
     $this->required_options = array_merge($this->required_options, (array) $options);
   }
   
+  /**
+   * 
+   * @param array   $options  Array of options to set up
+   */
   protected function setOptions($options)
   {
     // check if all required options have been registred
@@ -81,16 +77,25 @@ abstract class AbstractJob implements JobInterface
     $this->options = array_merge($this->options, (array) $options);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function hasOption($option)
   {
     return in_array($option, array_keys($this->getOptions()));
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getOptions()
   {
     return $this->options;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getOption($name)
   {
     if (!isset($this->options[$name]))
@@ -115,16 +120,25 @@ abstract class AbstractJob implements JobInterface
     $this->parameters = array_merge($this->parameters, (array) $parameters);
   }
   
+  /**
+   * {@inheritdoc}
+   */
   public function hasParameter($parameter)
   {
     return in_array($parameter, array_keys($this->getParameters()));
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getParameters()
   {
     return $this->parameters;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getParameter($name)
   {
     if (!isset($this->parameters[$name]))
@@ -136,7 +150,55 @@ abstract class AbstractJob implements JobInterface
   }
   
   /**
+   * Sets a PSR valid logger
+   * 
+   * @param   \Psr\Log\LoggerInterface  $logger
+   */
+  protected function setLogger(LoggerInterface $logger)
+  {
+    $this->logger = $logger;
+  }
+
+  /**
+   * @return \Psr\Log\LoggerInterface 
+   */
+  protected function getLogger()
+  {
+    return $this->logger;
+  }
+
+  /**
+   * Log message only if a logger has been set
+   * 
+   * @param   string  $message
+   * @param   array   $contaxt
+   * @param   string  $level    info|warning|error|debug
+   */
+  protected function log($message, $context = array(), $level = 'info')
+  {
+    if ($logger = $this->getLogger())
+    {
+      $logger->$level($message, $context);
+    }
+  }
+  
+  /**
+   * Log an error
+   * 
+   * @param   string  $message
+   * @param   array   $contaxt
+   */
+  protected function error($message, $context = array())
+  {
+    $this->log($message, $context, 'error');
+  }
+  
+  /**
    * Makes sure all $required_args are listed in $args list.
+   * 
+   * @param array   $args           Array of arguments
+   * @param array   $required_args  List of mandatory arguments
+   * @param string  $arg_type       argument|option|parameter
    */
   protected function validateArguments($args, $required_args, $arg_type = 'argument')
   {
@@ -161,22 +223,31 @@ abstract class AbstractJob implements JobInterface
     return true;
   }
   
+  /**
+   * Update Task's progress and persist data
+   * 
+   * @param   float $percent
+   * @throws  \Libcast\JobQueue\Exception\JobException
+   */
   protected function setTaskProgress($percent)
   {
-    if (!$this->task)
-    {
-      throw new JobException('There is no Task to set progress to.');
-    }
-
-    if (!$this->queue)
+    if (!$queue = $this->queue)
     {
       throw new JobException('There is no Queue to update Task progress.');
     }
 
-    $this->task->setProgress($percent);
-    $this->queue->update($this->task);
+    if (!$task = $this->task)
+    {
+      throw new JobException('There is no Task to set progress to.');
+    }
+
+    $task->setProgress((float) $percent);
+    $queue->update($task);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function setup(TaskInterface $task, QueueInterface $queue, LoggerInterface $logger = null)
   {
     $this->setOptions($task->getOptions());
@@ -187,7 +258,10 @@ abstract class AbstractJob implements JobInterface
     
     $this->queue = $queue;
     
-    $this->logger = $logger;
+    if ($logger)
+    {
+      $this->setLogger($logger);
+    }
   }
 
   /**
@@ -221,6 +295,9 @@ abstract class AbstractJob implements JobInterface
     return true;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function execute() 
   {
     if (!$queue = $this->queue)
@@ -252,10 +329,7 @@ abstract class AbstractJob implements JobInterface
     }
     catch (\Exception $exception)
     {
-      if ($this->logger)
-      {
-        $this->logger->error("Job execution failed with error '{$exception->getMessage()}'.");
-      }
+      $this->error(sprintf('Job execution failed with error "%s".', $exception->getMessage()));
       
       return false;
     }

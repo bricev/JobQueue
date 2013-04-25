@@ -91,6 +91,4 @@ interface QueueInterface
    * @return \Libcast\JobQueue\Task\TaskInterface|null
    */
   public function getNextTask($set = null);
-  
-  public function setLogger(LoggerInterface $logger);
 }

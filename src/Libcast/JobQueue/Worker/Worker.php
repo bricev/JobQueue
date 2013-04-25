@@ -9,6 +9,7 @@ use Libcast\JobQueue\Queue\QueueInterface;
 use Libcast\JobQueue\Task\Task;
 
 use Psr\Log\LoggerInterface;
+use Monolog\Handler\NativeMailerHandler;
 
 class Worker implements WorkerInterface
 {
@@ -16,16 +17,31 @@ class Worker implements WorkerInterface
 
   const STATUS_PAUSED = 'paused';
 
+  /**
+   * @var string
+   */
   protected $name;
-  
+
+  /**
+   * @var string busy|paused
+   */
   protected $status = null;
 
+  /**
+   * @var \Libcast\JobQueue\Queue\QueueInterface
+   */
   protected $queue;
-  
+
+  /**
+   * @var array
+   */
   protected $profiles;
 
-  protected $logger;
-  
+  /**
+   * @var \Psr\Log\LoggerInterface|null
+   */
+  protected $logger = null;
+
   /**
    * Setup a Worker to connect a Queue.
    * The Worker will receive Tasks from Queue profiled sets.
@@ -47,13 +63,37 @@ class Worker implements WorkerInterface
     $this->setStatus(self::STATUS_PAUSED);
     $this->setQueue($queue);
     $this->setProfiles($profiles);
-    $this->setLogger($logger);
 
+    if ($logger)
+    {
+      $this->setLogger($logger);
+    }
+
+    // send errors to logger if exists
     set_error_handler(function ($code, $message, $file, $line, $context) use ($logger)
     {
       if ($logger)
       {
-        $logger->error($message, array(
+        switch ($code)
+        {
+          case E_NOTICE:
+          case E_DEPRECATED:
+          case E_USER_NOTICE:
+          case E_USER_DEPRECATED:
+          case E_STRICT:
+            $method = 'debug';
+            break;
+
+          case E_WARNING:
+          case E_USER_WARNING:
+            $method = 'warning';
+            break;
+          
+          default :
+            $method = 'error';
+        }
+
+        $logger->$method($message, array(
             'file'    => $file,
             'line'    => $line,
             'context' => $context,
@@ -62,16 +102,29 @@ class Worker implements WorkerInterface
     });
   }
 
+  /**
+   * Set a name used by logger to track this Worker activity
+   * 
+   * @param string $name
+   */
   protected function setName($name)
   {
     $this->name = (string) $name;
   }
 
+  /**
+   * 
+   * @return string
+   */
   protected function getName()
   {
     return $this->name;
   }
 
+  /**
+   * 
+   * @param string $status busy|paused
+   */
   protected function setStatus($status)
   {
     if (!in_array($status, array(self::STATUS_BUSY, self::STATUS_PAUSED)))
@@ -82,17 +135,26 @@ class Worker implements WorkerInterface
     $this->status = $status;
   }
 
+  /**
+   * 
+   * @return string busy|paused
+   */
   protected function getStatus()
   {
     return $this->status;
   }
 
+  /**
+   * 
+   * @param \Libcast\JobQueue\Queue\QueueInterface $queue
+   */
   protected function setQueue(QueueInterface $queue)
   {
     $this->queue = $queue;
   }
 
   /**
+   * 
    * @return \Libcast\JobQueue\Queue\QueueInterface 
    */
   protected function getQueue()
@@ -100,18 +162,33 @@ class Worker implements WorkerInterface
     return $this->queue;
   }
 
+  /**
+   * Set profiles handled by this Worker
+   * 
+   * @param array $profiles Array of profile names
+   */
   protected function setProfiles($profiles)
   {
     $this->profiles = (array) $profiles;
   }
 
+  /**
+   * @return array
+   */
   protected function getProfiles()
   {
     return $this->profiles;
   }
 
+  /**
+   * @param \Psr\Log\LoggerInterface $logger
+   */
   protected function setLogger(LoggerInterface $logger)
   {
+    $logger->pushHandler(new NativeMailerHandler('alerts@libcast.com',
+            sprintf('JobQueue error from worker %s', $this->getName()),
+            'Libcast JobQueue'));
+
     $this->logger = $logger;
   }
 
@@ -123,6 +200,23 @@ class Worker implements WorkerInterface
     return $this->logger;
   }
 
+  /**
+   * Log message only if a logger has been set
+   * 
+   * @param   string  $message
+   * @param   array   $contaxt
+   */
+  protected function log($message, $context = array())
+  {
+    if ($logger = $this->getLogger())
+    {
+      $logger->info($message, $context);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function run()
   {
     $queue = $this->getQueue();
@@ -146,11 +240,11 @@ class Worker implements WorkerInterface
         $this->setStatus(self::STATUS_BUSY);
 
         $this->log("Worker '$this' received Task '{$task->getId()}'", array(
-            'tag' =>$task->getTag(),
-            'job' => $task->getJob()->getClassName(),
-            'priority' => $task->getOption('priority'),
-            'profile' => $task->getOption('profile'),
-            'children' => count($task->getChildren()),
+            'tag'       =>$task->getTag(),
+            'job'       => $task->getJob()->getClassName(),
+            'priority'  => $task->getOption('priority'),
+            'profile'   => $task->getOption('profile'),
+            'children'  => count($task->getChildren()),
         ));
 
         // mark Task as running
@@ -194,10 +288,10 @@ class Worker implements WorkerInterface
           $task->setStatus(Task::STATUS_FAILED);
           $queue->update($task);
         }
-        
+
         sleep(3); // give CPU some rest
       }
-      
+
       // log pause
       if (self::STATUS_BUSY === $this->getStatus())
       {
@@ -206,23 +300,15 @@ class Worker implements WorkerInterface
         $this->log("Worker '$this' has been paused.");
       }
 
-      sleep(15); // no more Task, let's sleep a little bit longer
+      sleep(10); // no more Task, let's sleep a little bit longer
     }
   }
-  
-  protected function log($message, $context = array())
-  {
-    if ($logger = $this->getLogger())
-    {
-      $logger->info($message, $context);
-    }
-  }
-  
+
   function __destruct()
   {
     $this->log("Worker '$this' stoped.");
   }
-  
+
   public function __toString()
   {
     return $this->getName();

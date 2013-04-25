@@ -30,7 +30,7 @@ abstract class AbstractQueue implements QueueInterface
   const ORDER_DESC = 'desc';
 
   /**
-   * @var $parameters Array containing provider paramaters
+   * @var array
    */
   protected $parameters = array();
 
@@ -50,12 +50,21 @@ abstract class AbstractQueue implements QueueInterface
     }
   }
 
+  /**
+   * 
+   * @param array $parameters
+   */
   protected function setParameters($parameters)
   {
     $this->parameters = $parameters;
   }
 
-  protected function getParameters($name, $default = null)
+  /**
+   * 
+   * @param string      $name     Parameter name
+   * @param string|null $default  Default value returned if no parameter
+   */
+  protected function getParameter($name, $default = null)
   {
     if (isset($this->parameters[$name]))
     {
@@ -65,6 +74,10 @@ abstract class AbstractQueue implements QueueInterface
     return $default;
   }
 
+  /**
+   * 
+   * @param \Psr\Log\LoggerInterface
+   */
   public function setLogger(LoggerInterface $logger)
   {
     $this->logger = $logger;
@@ -78,6 +91,26 @@ abstract class AbstractQueue implements QueueInterface
     return $this->logger;
   }
 
+  /**
+   * Log message only if a logger has been set
+   * 
+   * @param   string  $message
+   * @param   array   $contaxt
+   * @param   string  $level    info|warning|error|debug
+   */
+  protected function log($message, $context = array(), $level = 'info')
+  {
+    if ($logger = $this->getLogger())
+    {
+      $logger->$level($message, $context);
+    }
+  }
+  
+  /**
+   * List of options to sort Tasks by
+   * 
+   * @return array
+   */
   public static function getSortByOptions()
   {
     return array(
@@ -87,16 +120,13 @@ abstract class AbstractQueue implements QueueInterface
     );
   }
 
+  /**
+   * Connects the Queue to its database
+   * 
+   * @throws \Libcast\JobQueue\Exception\QueueException
+   */
   protected function connect()
   {
     throw new QueueException('You must set a Queue database provider.');
-  }
-  
-  protected function log($message, $context = array())
-  {
-    if ($logger = $this->getLogger())
-    {
-      return $logger->info($message, $context);
-    }
   }
 }
