@@ -10,13 +10,6 @@ use Psr\Log\LoggerInterface;
 interface JobInterface
 {
   /**
-   * Get Job's name
-   * 
-   * @return string
-   */
-  public function getName();
-
-  /**
    * Get Job's class name
    * 
    * @return string
@@ -24,6 +17,7 @@ interface JobInterface
   public function getClassName();
 
   /**
+   * Check if $option exists
    * 
    * @param string $option
    * @return bool
@@ -45,6 +39,7 @@ interface JobInterface
   public function getOption($name);
 
   /**
+   * Check if $parameter exists
    * 
    * @param string $parameter
    * @return bool
@@ -76,7 +71,7 @@ interface JobInterface
   public function setup(TaskInterface $task, QueueInterface $queue, LoggerInterface $logger = null);
 
   /**
-   * Start running the Job
+   * Executes preRun(), run() & postRun() methods of the Job
    * Requires to set a Task
    * 
    * @throws JobException

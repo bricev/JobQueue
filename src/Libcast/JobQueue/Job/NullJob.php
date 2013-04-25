@@ -11,8 +11,6 @@ class NullJob extends AbstractJob implements JobInterface
 {
   protected function initialize()
   {
-    $this->setName('Null Job');
-
     $this->setOptions(array(
         'priority'  => 0,
         'profile'   => 0,

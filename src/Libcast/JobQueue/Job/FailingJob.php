@@ -13,7 +13,6 @@ use Libcast\JobQueue\Job\JobInterface;
  * Allowed methods :
  * 
  *   * initialize() set up the Job
- *     - MUST call setName($name) to give the Job a Name
  *     - MAY  call setOptions(array())
  *     - MAY  call setRequiredOptions(array())
  *     - MAY  call setParameters(array())
@@ -32,8 +31,6 @@ class FailingJob extends AbstractJob implements JobInterface
 {
   protected function initialize()
   {
-    $this->setName('Failing Job (for test only)');
-
     $this->setOptions(array(
         'priority'  => 1,
         'profile'   => 'dummy-stuff',
