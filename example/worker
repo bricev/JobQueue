@@ -31,8 +31,8 @@ use Libcast\JobQueue\Worker\Worker;
 
 // setup the Monolog logger
 $logger = new Logger($name);
-$logger->pushHandler(new StreamHandler("$logs_path/$name.log", Logger::DEBUG));
-$logger->pushHandler(new StreamHandler("$logs_path/common.log", Logger::DEBUG));
+$logger->pushHandler(new StreamHandler("$logs_path/$name.log", Logger::INFO));
+$logger->pushHandler(new StreamHandler("$logs_path/common.log", Logger::INFO));
 
 // get a Queue instance
 $queueFactory = new QueueFactory($provider, $provider_parameters, $logger);
