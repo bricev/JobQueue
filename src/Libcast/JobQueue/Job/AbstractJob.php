@@ -16,12 +16,12 @@ abstract class AbstractJob implements JobInterface
    * @var \Libcast\JobQueue\Queue\QueueFactory
    */
   protected $queue = null;
-  
+
   /**
    * @var \Libcast\JobQueue\Task\Task
    */
   protected $task = null;
-  
+
   /**
    * @var \Psr\Log\LoggerInterface
    */
@@ -35,13 +35,13 @@ abstract class AbstractJob implements JobInterface
                 'priority',
                 'profile',
             );
-  
+
   /**
    * @var arrays
    */
   protected $parameters = array(),
             $required_parameters = array();
-  
+
   function __construct()
   {
     $this->initialize();
@@ -63,7 +63,7 @@ abstract class AbstractJob implements JobInterface
   {
     $this->required_options = array_merge($this->required_options, (array) $options);
   }
-  
+
   /**
    * 
    * @param array   $options  Array of options to set up
@@ -102,7 +102,7 @@ abstract class AbstractJob implements JobInterface
     {
       throw new JobException("The option '$name' does not exists.");
     }
-    
+
     return $this->options[$name];
   }
 
@@ -110,7 +110,7 @@ abstract class AbstractJob implements JobInterface
   {
     $this->required_parameters = array_merge($this->required_parameters, (array) $parameters);
   }
-  
+
   protected function setParameters($parameters)
   {
     // check if all required parameters have been registred
@@ -119,7 +119,7 @@ abstract class AbstractJob implements JobInterface
 
     $this->parameters = array_merge($this->parameters, (array) $parameters);
   }
-  
+
   /**
    * {@inheritdoc}
    */
@@ -145,10 +145,10 @@ abstract class AbstractJob implements JobInterface
     {
       throw new JobException("The parameter '$name' does not exists.");
     }
-    
+
     return $this->parameters[$name];
   }
-  
+
   /**
    * Sets a PSR valid logger
    * 
@@ -181,7 +181,7 @@ abstract class AbstractJob implements JobInterface
       $logger->$level($message, $context);
     }
   }
-  
+
   /**
    * Log an error
    * 
@@ -192,7 +192,7 @@ abstract class AbstractJob implements JobInterface
   {
     $this->log($message, $context, 'error');
   }
-  
+
   /**
    * Makes sure all $required_args are listed in $args list.
    * 
@@ -208,7 +208,7 @@ abstract class AbstractJob implements JobInterface
       {
         throw new JobException("The $arg_type '$arg' is missing.");
       }
-      
+
       if (!strstr($this->getClassName(), 'NullJob') && 
               'option' === $arg_type && 
               'priority' === $arg &&
@@ -219,10 +219,10 @@ abstract class AbstractJob implements JobInterface
                 $args[$arg]));
       }
     }
-    
+
     return true;
   }
-  
+
   /**
    * Update Task's progress and persist data
    * 
@@ -251,13 +251,13 @@ abstract class AbstractJob implements JobInterface
   public function setup(TaskInterface $task, QueueInterface $queue, LoggerInterface $logger = null)
   {
     $this->setOptions($task->getOptions());
-    
+
     $this->setParameters($task->getParameters());
-    
+
     $this->task = $task;
-    
+
     $this->queue = $queue;
-    
+
     if ($logger)
     {
       $this->setLogger($logger);
@@ -304,39 +304,24 @@ abstract class AbstractJob implements JobInterface
     {
       throw new JobException('A Queue is required to run a Job.');
     }
-    
+
     if (!$task = $this->task)
     {
       throw new JobException('A Task is required to run a Job.');
     }
 
-    try 
+    switch (false)
     {
-      if (!$this->preRun())
-      {
-        throw new JobException('Running the pre Job failed.');
-      }
-      
-      if (!$this->run())
-      {
-        throw new JobException('Running the main Job failed.');
-      }
-      
-      if (!$this->postRun())
-      {
-        throw new JobException('Running the post Job failed.');
-      }
+      case $this->preRun():   $type = 'pre';
+      case $this->run():      $type = isset($type) ? $type : 'main';
+      case $this->postRun():  $type = isset($type) ? $type : 'post';
+
+        throw new JobException("Running the $type Job failed.");
     }
-    catch (\Exception $exception)
-    {
-      $this->error(sprintf('Job execution failed with error "%s".', $exception->getMessage()));
-      
-      return false;
-    }
-    
+
     return true;
   }
-  
+
   public function __toString()
   {
     return (string) $this->getClassName();

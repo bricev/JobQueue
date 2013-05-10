@@ -244,24 +244,23 @@ class Worker implements WorkerInterface
             'children'  => count($task->getChildren()),
         ));
 
-        // mark Task as running
-        $task->setStatus(Task::STATUS_RUNNING);
-        $queue->update($task);
-
-        // get Job from Task
-        $job = $task->getJob();
-        $job->setup($task, $queue, $this->getLogger());
-
-        if ($job->execute())
+        try
         {
-          // mark Task as success
-          $task->setStatus(Task::STATUS_SUCCESS);
+          // mark Task as running
+          $task->setStatus(Task::STATUS_RUNNING);
           $queue->update($task);
 
-          // try to enqueue child Tasks, 
-          // mark Task as failed in case of an error
-          try
+          // get Job from Task
+          $job = $task->getJob();
+          $job->setup($task, $queue, $this->getLogger());
+
+          if ($job->execute())
           {
+            // mark Task as success
+            $task->setStatus(Task::STATUS_SUCCESS);
+            $queue->update($task);
+
+            // try to enqueue child Tasks, 
             $finished = true;
             foreach ($task->getChildren() as $child)
             {
@@ -272,30 +271,48 @@ class Worker implements WorkerInterface
 
               $finished = false;
             }
-          }
-          catch (\Exception $e)
-          {
-            $this->log("Impossible to add child for Task $task.", array($e->getMessage()));
 
+            if ($finished)
+            {
+              // mark Task as finished
+              $task->setStatus(Task::STATUS_FINISHED);
+              $queue->update($task);
+            }
+          }
+          else 
+          {
             // mark Task as failed
             $task->setStatus(Task::STATUS_FAILED);
             $queue->update($task);
-
-            $finished = false;
-          }
-
-          if ($finished)
-          {
-            // mark Task as finished
-            $task->setStatus(Task::STATUS_FINISHED);
-            $queue->update($task);
           }
         }
-        else 
+
+        catch (\Exception $exception)
         {
+          $this->log("Worker '$this' encountered an error with Task '$task'.", array(
+              $exception->getMessage(),
+              $exception->getFile(),
+              $exception->getLine()
+          ));
+
           // mark Task as failed
-          $task->setStatus(Task::STATUS_FAILED);
-          $queue->update($task);
+          try
+          {
+            $task->setStatus(Task::STATUS_FAILED);
+            $queue->update($task);
+          }
+          catch (\Exception $exception)
+          {
+            $this->log("Worker '$this' can't mark Task '$task' as failed.", array(
+                $exception->getMessage(),
+                $exception->getFile(),
+                $exception->getLine()
+            ));
+
+            continue;
+          }
+
+          continue;
         }
 
         sleep(3); // give CPU some rest
