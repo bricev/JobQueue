@@ -15,7 +15,7 @@ class ListJobCommand extends JobCommand
 {
   protected function configure()
   {
-    $this->setName('list:task')->
+    $this->setName('task:list')->
             setDescription('List Tasks from the Queue')->
             addOption('sort-by',      't',  InputOption::VALUE_OPTIONAL,  'Sort by (priority|profile|status)',   'priority')->
             addOption('order',        'o',  InputOption::VALUE_OPTIONAL,  'Order (asc|desc)',                    'desc')->

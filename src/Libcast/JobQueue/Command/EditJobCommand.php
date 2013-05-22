@@ -17,7 +17,7 @@ class EditJobCommand extends JobCommand
 {
   protected function configure()
   {
-    $this->setName('edit:task')->
+    $this->setName('task:edit')->
             setDescription('Edit a Task')->
 
             addArgument('id',             InputArgument::REQUIRED,     'Task Id')->
