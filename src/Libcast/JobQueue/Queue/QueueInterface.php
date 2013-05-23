@@ -52,8 +52,9 @@ interface QueueInterface
    * Remove Task from Queue
    * 
    * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @param boolean $update_parent false to prevent parent from being updated
    */
-  public function remove(TaskInterface $task);
+  public function remove(TaskInterface $task, $update_parent = true);
 
   /**
    * Lists all Tasks from Queue

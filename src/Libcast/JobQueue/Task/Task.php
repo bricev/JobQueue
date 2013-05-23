@@ -338,6 +338,16 @@ class Task implements TaskInterface
     $this->children[$task->getTag()] = $task;
   }
 
+  public function removeChild(TaskInterface $task)
+  {
+    if (!isset($this->children[$task->getTag()]))
+    {
+      throw new TaskException("Child with tag '{$task->getTag()}' does not exists.");
+    }
+
+    unset($this->children[$task->getTag()]);
+  }
+
   public function getChildren()
   {
     return $this->children;

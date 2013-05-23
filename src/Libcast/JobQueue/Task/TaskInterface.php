@@ -84,6 +84,8 @@ interface TaskInterface
   
   public function updateChild(TaskInterface $task);
 
+  public function removeChild(TaskInterface $task);
+
   public function getChildren();
   
   public function getChild($tag);
