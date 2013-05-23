@@ -31,20 +31,23 @@ class ListJobCommand extends JobCommand
   {
     while (true)
     {
-      $this->flushLines();
-
       $this->listTasks($input, $output);
 
-      system('clear');
+      if ($input->getOption('follow'))
+      {
+        system('clear');
+      }
 
       $output->writeln($this->getLines());
 
-      if (!$input->getOption('follow'))
+      if ($input->getOption('follow'))
       {
-        break;
+        $this->flushLines();
+        sleep(1);
+        continue;
       }
 
-      sleep(1);
+      break;
     }
   }
   
