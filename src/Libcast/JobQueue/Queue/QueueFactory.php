@@ -6,33 +6,36 @@ use Libcast\JobQueue\Exception\QueueException;
 
 class QueueFactory 
 {
-  protected $queue = null;
-
   /**
-   * Load Queue 
+   * Load a Queue based on a DB client set from parameters.
    * 
-   * @param string                    $provider   Name of the database provider
-   * @param array                     $parameters Provider parameters
-   * @param \Psr\Log\LoggerInterface
+   * @param mixed $parameters Client or array of parameters
+   * @param mixed $logger Logger object for debug
+   * @return Libcast\JobQueue\Queue\QueueInterface|false
    */
-  function __construct($provider, array $parameters = array(), $logger = null)
+  public static function load($parameters, $logger = null)
   {
-    $provider = ucfirst(strtolower($provider));
-    $queue_class = sprintf('Libcast\\JobQueue\\Queue\\%sQueue', $provider);
-
-    if (!class_exists($queue_class))
+    if (!is_array($parameters))
     {
-      throw new QueueException("Class '{$provider}Queue' does not exists.");
+      $parameters = array(
+          'client' => $parameters,
+      );
     }
 
-    $this->queue = new $queue_class($parameters, $logger);
-  }
-  
-  /**
-   * @return Libcast\JobQueue\Queue\QueueInterface 
-   */
-  public function getQueue()
-  {
-    return $this->queue;
+    if (!isset($parameters['client']))
+    {
+      throw new QueueException('A valid DB client must be set in parameters.');
+    }
+
+    switch (true)
+    {
+      case $parameters['client'] instanceof \Predis\Client :
+        return new RedisQueue($parameters['client'], $logger);
+      
+      default :
+        throw new QueueException('The submitted client is not yet supported.');
+    }
+
+    return false;
   }
 }

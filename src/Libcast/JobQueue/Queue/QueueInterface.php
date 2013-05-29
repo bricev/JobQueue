@@ -16,15 +16,7 @@ interface QueueInterface
    * @return int Task identifier
    */
   public function add(TaskInterface $task, $first = true);
-  
-  /**
-   * Keep a Task's data aside so that it can be execuetd later
-   * 
-   * @param \Libcast\JobQueue\Task\TaskInterface $task
-   * @param timestamp $date
-   */
-  public function schedule(TaskInterface $task, $date);
-  
+
   /**
    * Persist updated Task Data, perform extra actions dependint on Task status:
    * - check that Task has been reserved before it is running
@@ -36,17 +28,6 @@ interface QueueInterface
    * @throws \Libcast\JobQueue\Exception\QueueException
    */
   public function update(TaskInterface $task);
-  
-  /**
-   * Flag the Task as :
-   * - "reserved" : so that only one Worker may treat each Task (default)
-   * - "failed"   : helps keep Task data in Queue for later retry
-   * - "waiting"  : to (re)send Task in Queue
-   * 
-   * @param \Libcast\JobQueue\Task\TaskInterface $task 
-   * @param string                          $persist waiting|encoding|failed
-   */
-  public function flag(TaskInterface $task, $action = null);
 
   /**
    * Remove Task from Queue
@@ -55,6 +36,22 @@ interface QueueInterface
    * @param boolean $update_parent false to prevent parent from being updated
    */
   public function remove(TaskInterface $task, $update_parent = true);
+
+  /**
+   * Remove Task from Queue and keep its data to a scheduled Tasks set
+   * 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @param timestamp $date
+   */
+  public function schedule(TaskInterface $task, $date);
+
+  /**
+   * Move a Task from scheduled set to Queue
+   * 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @param timestamp $date
+   */
+  public function unschedule(TaskInterface $task);
 
   /**
    * Lists all Tasks from Queue
@@ -76,7 +73,7 @@ interface QueueInterface
    * @return \Libcast\JobQueue\Task\TaskInterface|null
    */
   public function getTask($id);
-  
+
   /**
    * Retrieve a Task status, even for non existsing Tasks or finished Tasks.
    * 
@@ -92,4 +89,9 @@ interface QueueInterface
    * @return \Libcast\JobQueue\Task\TaskInterface|null
    */
   public function getNextTask($set = null);
+
+  /**
+   * Empty Queue (clean all Tasks)
+   */
+  public function flush();
 }
