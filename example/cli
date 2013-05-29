@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * This is an example of a CLI application
+ * 
+ * Run "php ./cli --help" to get help
+ */
+
+require realpath(__DIR__.'/../vendor/autoload.php');
+
+use Libcast\JobQueue\Command\JobQueueApplication;
+
+use Libcast\JobQueue\Queue\QueueFactory;
+use Predis\Client;
+
+// get a Queue instance
+$redis = new Client('tcp://localhost:6379');
+$queue = QueueFactory::load($redis);
+
+$application = new JobQueueApplication($queue);
+$application->run();

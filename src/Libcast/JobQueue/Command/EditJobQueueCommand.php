@@ -9,41 +9,39 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
 use Libcast\JobQueue\Exception\CommandException;
-use Libcast\JobQueue\Command\JobCommand;
+use Libcast\JobQueue\Command\JobQueueCommand;
 use Libcast\JobQueue\Command\OutputTable;
 use Libcast\JobQueue\Task\Task;
 
-class EditJobCommand extends JobCommand
+class EditJobQueueCommand extends JobQueueCommand
 {
   protected function configure()
   {
-    $this->setName('task:edit')->
+    $this->setName('jobqueue:edit')->
             setDescription('Edit a Task')->
-
             addArgument('id',             InputArgument::REQUIRED,     'Task Id')->
-
-            addOption('parent-id',  'i',  InputOption::VALUE_OPTIONAL, 'Set parent Id (Eg. 123)',       null)->
-            addOption('priority',   'p',  InputOption::VALUE_OPTIONAL, 'Set priority (1, 2, ...)',      null)->
-            addOption('profile',    'f',  InputOption::VALUE_OPTIONAL, 'Set profile (eg. "high-cpu")',  null)->
+            addOption('parent-id',  'i',  InputOption::VALUE_OPTIONAL, 'Set parent Id (Eg. 123)', null)->
+            addOption('priority',   'p',  InputOption::VALUE_OPTIONAL, 'Set priority (1, 2, ...)', null)->
+            addOption('profile',    'f',  InputOption::VALUE_OPTIONAL, 'Set profile (eg. "high-cpu")', null)->
             addOption('status',     's',  InputOption::VALUE_OPTIONAL, 'Set status (pending|waiting|running|success|failed|finished)', null);
-    
+
     parent::configure();
   }
 
   protected function execute(InputInterface $input, OutputInterface $output)
   {
-    $queue = $this->getQueue($input);
-    
+    $queue = $this->getQueue();
+
     $task = $queue->getTask($input->getArgument('id'));
-    
+
     $update = false;
-    
+
     if ($input->getOption('parent-id'))
     {
       $task->setParentId($input->getOption('parent-id'));
       $update = true;
     }
-    
+
     if ($input->getOption('priority'))
     {
       $task->setOptions(array_merge($task->getOptions(), array(
@@ -51,7 +49,7 @@ class EditJobCommand extends JobCommand
       )));
       $update = true;
     }
-    
+
     if ($input->getOption('profile'))
     {
       $task->setOptions(array_merge($task->getOptions(), array(
@@ -59,13 +57,13 @@ class EditJobCommand extends JobCommand
       )));
       $update = true;
     }
-    
+
     if ($input->getOption('status'))
     {
       $task->setStatus($input->getOption('status'));
       $update = true;
     }
-    
+
     if ($update)
     {
       if (in_array($task->getStatus(), Task::getFakeTaskStatuses()))
@@ -84,7 +82,7 @@ class EditJobCommand extends JobCommand
     $table = new OutputTable;
     $table->addColumn('Key',    15, OutputTable::RIGHT);
     $table->addColumn('Value',  25, OutputTable::LEFT);
-    
+
     $table->addRow(array(
         'Key'   => 'Id',
         'Value' => $task->getId(),
@@ -130,12 +128,10 @@ class EditJobCommand extends JobCommand
       ));
     }
 
-    $this->addLine();
     $this->addLine($header);
     $this->addLine();
     $this->addLine($table->getTable());
-    $this->addLine();
-    
+
     $output->writeln($this->getLines());
   }
 }

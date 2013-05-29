@@ -7,23 +7,23 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 
-use Libcast\JobQueue\Command\JobCommand;
+use Libcast\JobQueue\Command\JobQueueCommand;
 use Libcast\JobQueue\Command\OutputTable;
 use Libcast\JobQueue\Task\Task;
 
-class ListJobCommand extends JobCommand
+class ListJobQueueCommand extends JobQueueCommand
 {
   protected function configure()
   {
-    $this->setName('task:list')->
+    $this->setName('jobqueue:list')->
             setDescription('List Tasks from the Queue')->
-            addOption('sort-by',      't',  InputOption::VALUE_OPTIONAL,  'Sort by (priority|profile|status)',   'priority')->
-            addOption('order',        'o',  InputOption::VALUE_OPTIONAL,  'Order (asc|desc)',                    'desc')->
-            addOption('priority',     'p',  InputOption::VALUE_OPTIONAL,  'Filter by priority (1, 2, ...)',      null)->
-            addOption('profile',      'l',  InputOption::VALUE_OPTIONAL,  'Filter by profile (eg. "high-cpu")',  null)->
-            addOption('status',       's',  InputOption::VALUE_OPTIONAL,  'Filter by status (pending|waiting|running|success|failed|finished)', null)->
-            addOption('follow',       'f',  InputOption::VALUE_NONE,      'Refresh screen, display Queue Tasks in real time');
-    
+            addOption('sort-by',  't',  InputOption::VALUE_OPTIONAL,  'Sort by (priority|profile|status)', 'priority')->
+            addOption('order',    'o',  InputOption::VALUE_OPTIONAL,  'Order (asc|desc)', 'desc')->
+            addOption('priority', 'p',  InputOption::VALUE_OPTIONAL,  'Filter by priority (1, 2, ...)', null)->
+            addOption('profile',  'l',  InputOption::VALUE_OPTIONAL,  'Filter by profile (eg. "high-cpu")', null)->
+            addOption('status',   's',  InputOption::VALUE_OPTIONAL,  'Filter by status (pending|waiting|running|success|failed|finished)', null)->
+            addOption('follow',   'f',  InputOption::VALUE_NONE,      'Refresh screen, display Queue Tasks in real time');
+
     parent::configure();
   }
 
@@ -50,10 +50,10 @@ class ListJobCommand extends JobCommand
       break;
     }
   }
-  
+
   protected function listTasks(InputInterface $input, OutputInterface $output)
   {
-    $queue = $this->getQueue($input);
+    $queue = $this->getQueue();
 
     $tasks = $queue->getTasks($input->getOption('sort-by'), 
             $input->getOption('order'), 
@@ -68,7 +68,6 @@ class ListJobCommand extends JobCommand
     $header .= $input->getOption('profile') ? sprintf(' having "%s" as profile', $input->getOption('profile')) : '';
     $header .= $input->getOption('status') ? sprintf(' having "%s" as status', $input->getOption('status')) : '';
 
-    $this->addLine();
     $this->addLine($header);
     $this->addLine();
 
@@ -107,7 +106,6 @@ class ListJobCommand extends JobCommand
       $output->getFormatter()->setStyle('finished', new OutputFormatterStyle('green', null, array('bold')));
 
       $this->addLine($table->getTable(true));
-      $this->addLine();
     }
   }
 }
