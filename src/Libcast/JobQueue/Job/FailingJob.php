@@ -45,7 +45,5 @@ class FailingJob extends AbstractJob implements JobInterface
   protected function run()
   {
     throw new JobException('FailingJob failed!');
-
-    return parent::run();
   }
 }

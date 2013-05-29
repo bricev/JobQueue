@@ -4,13 +4,17 @@
  * Here are some examples on how to submit Tasks to the Queue :
  */
 
-require __DIR__.'/../vendor/autoload.php';
+require realpath(__DIR__.'/../vendor/autoload.php');
 
 use Libcast\JobQueue\Task\Task;
+
 use Libcast\JobQueue\Job\DummyJob;
 use Libcast\JobQueue\Job\FaultyJob;
 use Libcast\JobQueue\Job\FailingJob;
+
 use Libcast\JobQueue\Queue\QueueFactory;
+
+use Predis\Client;
 
 // ----------
 
@@ -226,12 +230,32 @@ $parent_profiled->addChild($child_profiled);
 
 // ----------
 
-$queueFactory = new QueueFactory(
-        'redis',
-        array('host' => 'localhost', 'port' => 6379)
+$message = \Swift_Message::newInstance()->
+        setSubject('The Task has been successfuly treated!')->
+        setBody('Congratulation, the Task you submitted to JobQueue has been successfully treated. Cheers!')->
+        setFrom('jobqueue_sender@yopmail.com')->
+        setTo('jobqueue_receiver@yopmail.com');
+
+$notified = new Task(
+        new DummyJob,
+        array(),
+        array(
+            'dummytext' => 'aaaaaa',
+            'destination' => '/tmp/dummytest1',
+        ),
+        $message
 );
 
-$queue = $queueFactory->getQueue(); /* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
+// ----------
+
+// setup a Redis client
+$redis = new Client('tcp://localhost:6379');
+
+// load Queue
+$queue = QueueFactory::load($redis); 
+/* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
+
+// add all Tasks to Queue
 $queue->add($basic);            // 1
 $queue->add($faulty);           // 2
 $queue->add($failing);          // 3
@@ -242,3 +266,4 @@ $queue->add($scheduled);        // 7
 $queue->add($profiled);         // 8
 $queue->add($faulty_profiled);  // 9
 $queue->add($parent_profiled);  // 10
+$queue->add($notified);         // 11
