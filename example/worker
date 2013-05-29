@@ -4,41 +4,59 @@
 /**
  * This is a Worker example.
  * This Worker shoul be run as a daemon.
- * See /example/worker.conf to get an example of an upstart job (Ubuntu/Debian)
+ * See /example/worker.conf to get an example of an upstart job (Ubuntu/Debian).
  * 
- * The Logger should send logs in both a worker-dedicated and common streams
+ * The Logger sends logs in both a worker-dedicated and the common stream.
+ * 
+ * The SwiftMailer instance uses a Gmail account.
+ * 
+ * The Queue is propulsed by Redis.
  */
 
-// settings :
-$name                 = 'libcast_worker';       // string
-$profiles             = array('dummy-stuff');   // array of profile(s)
-$component_path       = __DIR__.'/..';          // path to component root
-$logs_path            = __DIR__.'/../log';      // path to logs directory
-$provider             = 'redis';                // DB (only 'redis' for now)
-$provider_parameters  = array(                  // DB settings:
-    'host'            => 'localhost',           // - redis hostname
-    'port'            => 6379,                  // - redis port
-);
-// end of settings
-
-require realpath("$component_path/vendor/autoload.php");
+require realpath(__DIR__.'/../vendor/autoload.php');
 
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Monolog\Handler\SwiftMailerHandler;
+
+use Predis\Client;
 
 use Libcast\JobQueue\Queue\QueueFactory;
 use Libcast\JobQueue\Worker\Worker;
 
-// setup the Monolog logger
+// name of this Worker
+$name = 'example';
+
+// list of Task profiles this Worker must handle from Queue
+$profiles = array(
+    'dummy-stuff',
+    'other-stuff',
+);
+
+// setup Swift_Mailer transport and message
+$transport = \Swift_SmtpTransport::newInstance('smtp.gmail.com', 465, 'ssl')->
+        setUsername('example_account@gmail.com')->
+        setPassword('********');
+
+$mailer = \Swift_Mailer::newInstance($transport);
+
+$message = \Swift_Message::newInstance()->
+        setSubject("Worker $name encountered an error")->
+        setFrom('libcast.do.not.reply@gmail.com')->
+        setTo('alerts@libcast.com');
+
+// setup a Monolog logger
 $logger = new Logger($name);
-$logger->pushHandler(new StreamHandler("$logs_path/$name.log", Logger::INFO));
-$logger->pushHandler(new StreamHandler("$logs_path/common.log", Logger::INFO));
+$logger->pushHandler(new StreamHandler(realpath(__DIR__.'/../log')."/$name.log", Logger::INFO));
+$logger->pushHandler(new StreamHandler(realpath(__DIR__.'/../log').'/common.log', Logger::INFO));
+$logger->pushHandler(new SwiftMailerHandler($mailer, $message, Logger::ERROR));
+
+// setup a Redis client (Predis)
+$redis = new Client('tcp://localhost:6379');
 
 // get a Queue instance
-$queueFactory = new QueueFactory($provider, $provider_parameters, $logger);
-
-$queue = $queueFactory->getQueue();
+$queue = QueueFactory::load($redis, $logger);
 
 // setup and start the Worker
-$worker = new Worker($name, $queue, $profiles, $logger);
+$worker = new Worker($name, $queue, $profiles, $logger, $mailer);
 $worker->run();

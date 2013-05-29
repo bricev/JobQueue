@@ -9,13 +9,14 @@ use Libcast\JobQueue\Queue\QueueInterface;
 use Libcast\JobQueue\Task\Task;
 
 use Psr\Log\LoggerInterface;
-use Monolog\Handler\NativeMailerHandler;
 
 class Worker implements WorkerInterface
 {
   const STATUS_BUSY = 'busy';
 
   const STATUS_PAUSED = 'paused';
+
+  const MAX_REQUEUE = 3;
 
   /**
    * @var string
@@ -38,65 +39,47 @@ class Worker implements WorkerInterface
   protected $profiles;
 
   /**
-   * @var \Psr\Log\LoggerInterface|null
+   * @var array Failed Tasks count
    */
-  protected $logger = null;
+  protected $failed_count = array();
 
   /**
-   * Setup a Worker to connect a Queue.
+   * @var \Psr\Log\LoggerInterface|null
+   */
+  protected $logger;
+
+  /**
+   * @var \Swift_Mailer
+   */
+  protected $mailer;
+
+  /**
+   * Setup a Worker to connect the Queue.
    * The Worker will receive Tasks from Queue profiled sets.
    * Each Task will setup a Job that can be run (executed).
    * 
-   * @param string                    $name     Name of the Worker
-   * @param Queue                     $queue    Queue instance
-   * @param array                     $profiles Profiles names (sets of Tasks)
-   * @param \Psr\Log\LoggerInterface  $logger   Implementation of Psr\Log class
+   * @param string                                  $name     Name of the Worker
+   * @param \Libcast\JobQueue\Queue\QueueInterface  $queue    Queue instance
+   * @param array                                   $profiles Profiles names (sets of Tasks)
+   * @param \Psr\Log\LoggerInterface                $logger   Implementation of Psr\Log interface
+   * @param \Swift_Mailer                           $mailer   Swift_Mailer instance
    */
-  function __construct($name, QueueInterface $queue, $profiles = array(), LoggerInterface $logger = null)
+  function __construct($name, QueueInterface $queue, $profiles = array(), LoggerInterface $logger = null, \Swift_Mailer $mailer = null)
   {
-    // makes sure the Worker has space
-    ini_set('memory_limit', '-1');
-    ini_set('max_execution_time', '-1');
-    set_time_limit(0);
-
     $this->setName($name);
     $this->setStatus(self::STATUS_PAUSED);
     $this->setQueue($queue);
     $this->setProfiles($profiles);
-
     if ($logger)
     {
       $this->setLogger($logger);
     }
-
-    // send errors to logger if exists
-    set_error_handler(function ($code, $message, $file, $line, $context) use ($logger)
+    if ($mailer)
     {
-      if ($logger)
-      {
-        switch ($code)
-        {
-          case E_NOTICE:
-          case E_DEPRECATED:
-          case E_USER_NOTICE:
-          case E_USER_DEPRECATED:
-          case E_STRICT:
-          case E_WARNING:
-          case E_USER_WARNING:
-            $method = 'debug';
-            break;
+      $this->setMailer($mailer);
+    }
 
-          default :
-            $method = 'error';
-        }
-
-        $logger->$method($message, array(
-            'file'    => $file,
-            'line'    => $line,
-            'context' => $context,
-        ));
-      }
-    });
+    $this->configurePHP();
   }
 
   /**
@@ -170,6 +153,7 @@ class Worker implements WorkerInterface
   }
 
   /**
+   * 
    * @return array
    */
   protected function getProfiles()
@@ -178,14 +162,57 @@ class Worker implements WorkerInterface
   }
 
   /**
+   * Increment the count of failed attemp for a given Task
+   * 
+   * @param   \Libcast\JobQueue\Task\Task $task
+   * @throws  \Libcast\JobQueue\Exception\WorkerException
+   */
+  protected function incrFailed(Task $task)
+  {
+    if (!$task->getId())
+    {
+      throw new WorkerException("Impossible to increment failure count for Task '$task'.");
+    }
+
+    if (!isset($this->failed_count[$task->getId()]))
+    {
+      $this->failed_count[$task->getId()] = 1;
+    }
+    else
+    {
+      $this->failed_count[$task->getId()]++;
+    }
+  }
+
+  /**
+   * Get the count of failed attempt for a given Task
+   * 
+   * @param   \Libcast\JobQueue\Task\Task $task
+   * @return  int
+   * @throws  \Libcast\JobQueue\Exception\WorkerException
+   */
+  protected function countFailed(Task $task)
+  {
+    if (!$task->getId())
+    {
+      throw new WorkerException("Impossible to count failures for Task '$task'.");
+    }
+
+    if (!isset($this->failed_count[$task->getId()]))
+    {
+      return 0;
+    }
+    else
+    {
+      return (int) $this->failed_count[$task->getId()];
+    }
+  }
+
+  /**
    * @param \Psr\Log\LoggerInterface $logger
    */
   protected function setLogger(LoggerInterface $logger)
   {
-    $logger->pushHandler(new NativeMailerHandler('alerts@libcast.com',
-            sprintf('JobQueue error from worker %s', $this->getName()),
-            'Libcast JobQueue'));
-
     $this->logger = $logger;
   }
 
@@ -198,17 +225,21 @@ class Worker implements WorkerInterface
   }
 
   /**
-   * Log message only if a logger has been set
    * 
-   * @param   string  $message
-   * @param   array   $contaxt
+   * @param \Swift_Mailer $mailer
    */
-  protected function log($message, $context = array())
+  protected function setMailer(\Swift_Mailer $mailer)
   {
-    if ($logger = $this->getLogger())
-    {
-      $logger->info($message, $context);
-    }
+    $this->mailer = $mailer;
+  }
+
+  /**
+   * 
+   * @return \Swift_Mailer
+   */
+  protected function getMailer()
+  {
+    return $this->mailer;
   }
 
   /**
@@ -216,46 +247,49 @@ class Worker implements WorkerInterface
    */
   public function run()
   {
-    $queue = $this->getQueue();
-
     /* @hack avoid multiple worker startup to run a same Task twice */
     usleep(rand(0, 3000));
 
-    $this->log(sprintf('Worker \'%s\' start taking Tasks from Queue with %s profile%s.', 
-            $this->getName(),
-            implode(', ', $this->getProfiles()),
-            count($this->getProfiles()) > 1 ? 's' : ''));
-
     $this->setStatus(self::STATUS_BUSY);
 
-    while (true)
+    try
     {
-      while ($task = $queue->getNextTask($this->getProfiles()))
+      $queue = $this->getQueue();
+
+      $this->log(sprintf('Worker \'%s\' start taking Tasks from Queue with %s profile%s.', 
+              $this->getName(),
+              implode(', ', $this->getProfiles()),
+              count($this->getProfiles()) > 1 ? 's' : ''));
+
+      while (true)
       {
-        /* @var $task \Libcast\JobQueue\Task\TaskInterface */
-
-        $this->setStatus(self::STATUS_BUSY);
-
-        $this->log("Worker '$this' received Task '{$task->getId()}'", array(
-            'tag'       =>$task->getTag(),
-            'job'       => $task->getJob()->getClassName(),
-            'priority'  => $task->getOption('priority'),
-            'profile'   => $task->getOption('profile'),
-            'children'  => count($task->getChildren()),
-        ));
-
-        try
+        while ($task = $queue->getNextTask($this->getProfiles()))
         {
-          // mark Task as running
-          $task->setStatus(Task::STATUS_RUNNING);
-          $queue->update($task);
+          /* @var $task \Libcast\JobQueue\Task\TaskInterface */
 
-          // get Job from Task
-          $job = $task->getJob();
-          $job->setup($task, $queue, $this->getLogger());
+          $this->setStatus(self::STATUS_BUSY);
 
-          if ($job->execute())
+          $this->log("Worker '$this' received Task '{$task->getId()}'", array(
+              'tag'       =>$task->getTag(),
+              'job'       => $task->getJob()->getClassName(),
+              'priority'  => $task->getOption('priority'),
+              'profile'   => $task->getOption('profile'),
+              'children'  => count($task->getChildren()),
+          ));
+
+          try
           {
+            // mark Task as running
+            $task->setStatus(Task::STATUS_RUNNING);
+            $queue->update($task);
+
+            // get Job from Task
+            $job = $task->getJob();
+            $job->setup($task, $queue, $this->getLogger());
+
+            // run Job
+            $job->execute();
+
             // mark Task as success
             $task->setStatus(Task::STATUS_SUCCESS);
             $queue->update($task);
@@ -264,7 +298,7 @@ class Worker implements WorkerInterface
             $finished = true;
             foreach ($task->getChildren() as $child)
             {
-              /* @var $child \Libcast\JobQueue\Task\TaskInterface */
+              /* @var $child \Libcast\JobQueue\Task\Task */
               $child->setParentId($task->getId());
 
               $queue->add($child);
@@ -277,56 +311,150 @@ class Worker implements WorkerInterface
               // mark Task as finished
               $task->setStatus(Task::STATUS_FINISHED);
               $queue->update($task);
+              
+              // send notifications if any
+              if (!$task->getParentId() && $message = $task->getMessage())
+              {
+                $this->getMailer()->send($message);
+                $this->log('A notification has been sent.', array(
+                    $message->getTo(),
+                    $message->getSubject(),
+                ));
+              }
             }
           }
-          else 
-          {
-            // mark Task as failed
-            $task->setStatus(Task::STATUS_FAILED);
-            $queue->update($task);
-          }
-        }
 
-        catch (\Exception $exception)
-        {
-          $this->log("Worker '$this' encountered an error with Task '$task'.", array(
-              $exception->getMessage(),
-              $exception->getFile(),
-              $exception->getLine()
-          ));
-
-          // mark Task as failed
-          try
-          {
-            $task->setStatus(Task::STATUS_FAILED);
-            $queue->update($task);
-          }
           catch (\Exception $exception)
           {
-            $this->log("Worker '$this' can't mark Task '$task' as failed.", array(
+            $this->log("Worker '$this' encountered an error with Task '$task'.", array(
                 $exception->getMessage(),
                 $exception->getFile(),
                 $exception->getLine()
-            ));
+            ), 'error');
+
+            try
+            {
+              $this->incrFailed($task);
+
+              $fail_count = $this->countFailed($task);
+
+              // give the Task another chance...
+              if (self::MAX_REQUEUE > $fail_count)
+              {
+                $this->log(sprintf('Failed Task \'%d\' has been given another chance (%d/%d)',
+                        $task->getId(),
+                        $fail_count,
+                        self::MAX_REQUEUE));
+
+                // schedule Task to let next in Queue being treated before
+                $queue->schedule($task, time() + 30);
+              }
+
+              // ... or mark it as failed if too many attempts
+              else
+              {
+                $this->log("Task '{$task->getId()}' failed $fail_count times : Worker gave up.");
+
+                // mark Task as failed
+                $task->setStatus(Task::STATUS_FAILED);
+                $queue->update($task);
+              }
+            }
+
+            catch (\Exception $exception)
+            {
+              $this->log("Worker '$this' can't mark Task '$task' as failed.", array(
+                  $exception->getMessage(),
+                  $exception->getFile(),
+                  $exception->getLine()
+              ), 'error');
+
+              continue;
+            }
 
             continue;
           }
 
-          continue;
+          sleep(3); // give CPU some rest
         }
 
-        sleep(3); // give CPU some rest
-      }
+        // log pause
+        if (self::STATUS_BUSY === $this->getStatus())
+        {
+          $this->setStatus(self::STATUS_PAUSED);
 
-      // log pause
-      if (self::STATUS_BUSY === $this->getStatus())
+          $this->log("Worker '$this' has been paused.");
+        }
+
+        sleep(10); // no more Task, let's sleep a little bit longer
+      }
+    }
+
+    catch (\Exception $e)
+    {
+      $this->log("Worker '$this' has encountered an error.", array(
+          $exception->getMessage(),
+          $exception->getFile(),
+          $exception->getLine(),
+          $exception->getTraceAsString(),
+      ), 'error');
+    }
+  }
+
+  /**
+   * Configure initial PHP settings to improve Worker's running
+   */
+  protected function configurePHP()
+  {
+    // makes sure the Worker has space
+    ini_set('memory_limit', '-1');
+    ini_set('max_execution_time', '-1');
+    set_time_limit(0);
+
+    $logger = $this->getLogger();
+
+    // send errors to logger if exists
+    set_error_handler(function ($code, $message, $file, $line, $context) use ($logger)
+    {
+      if ($logger)
       {
-        $this->setStatus(self::STATUS_PAUSED);
+        switch ($code)
+        {
+          case E_NOTICE:
+          case E_DEPRECATED:
+          case E_USER_NOTICE:
+          case E_USER_DEPRECATED:
+          case E_STRICT:
+          case E_WARNING:
+          case E_USER_WARNING:
+            $method = 'debug';
+            break;
 
-        $this->log("Worker '$this' has been paused.");
+          default :
+            $method = 'error';
+        }
+
+        $logger->$method($message, array(
+            'file'    => $file,
+            'line'    => $line,
+            'context' => $context,
+        ));
       }
+    });
+  }
 
-      sleep(10); // no more Task, let's sleep a little bit longer
+  /**
+   * Log message only if a logger has been set
+   * 
+   * @param   string  $message
+   * @param   array   $context
+   * @param   string  $level    debug|info|notice|warning|error|critical|alert
+   */
+  protected function log($message, $context = array(), $level = 'info')
+  {
+    if ($logger = $this->getLogger())
+    {
+      $logger->$level($message, $context);
     }
   }
 
