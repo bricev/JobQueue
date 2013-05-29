@@ -99,14 +99,20 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
     $enqueued = $this->getTask($task->getId());
 
+    $update = true;
+
     // if status change, trigger some extra actions
     if ($task->getStatus() !== $enqueued->getStatus())
     {
-      $method = 'set'.ucfirst(strtolower($task->getStatus()));
-      if (method_exists($this, $method))
+      if (method_exists($this, $method = 'set'.ucfirst(strtolower($task->getStatus()))))
       {
-        $this->$method($task);
+        $update = $this->$method($task);
       }
+    }
+
+    if (false !== $update)
+    {
+      $this->save($task);
     }
   }
 
@@ -115,8 +121,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    */
   public function setRunning(TaskInterface $task)
   {
-    $this->setScore($task, self::SCORE_RUNNING);
-    $this->save($task);
+    return $this->setScore($task, self::SCORE_RUNNING);
   }
 
   /**
@@ -124,8 +129,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    */
   public function setWaiting(TaskInterface $task)
   {
-    $this->setScore($task, $task->getParameter('priority'));
-    $this->save($task);
+    return $this->setScore($task, $task->getParameter('priority'));
   }
 
   /**
@@ -133,8 +137,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    */
   public function setSuccess(TaskInterface $task)
   {
-    $task->setProgress(1);
-    $this->save($task);
+    return $task->setProgress(1);
   }
 
   /**
@@ -142,9 +145,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    */
   public function setFailed(TaskInterface $task)
   {
-    // flag Task as failed
-    $this->setScore($task, self::SCORE_FAILED);
-    $this->save($task);
+    return $this->setScore($task, self::SCORE_FAILED);
   }
 
   /**
@@ -167,6 +168,8 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     }
 
     $this->client->lpush(self::PREFIX.'task:finished', $task->getId());
+
+    return false;
   }
 
   /**
