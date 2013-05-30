@@ -34,6 +34,11 @@ class EditJobQueueCommand extends JobQueueCommand
 
     $task = $queue->getTask($input->getArgument('id'));
 
+    if (in_array($task->getStatus(), Task::getFakeTaskStatuses()))
+    {
+      throw new CommandException('This Task can\'t be updated.');
+    }
+
     $update = false;
 
     if ($input->getOption('parent-id'))
@@ -66,11 +71,6 @@ class EditJobQueueCommand extends JobQueueCommand
 
     if ($update)
     {
-      if (in_array($task->getStatus(), Task::getFakeTaskStatuses()))
-      {
-        throw new CommandException('This Task can\' be update.');
-      }
-
       $header = "Task '$task' has been updated.";
       $queue->update($task);
     }
