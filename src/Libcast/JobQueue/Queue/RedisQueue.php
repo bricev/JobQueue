@@ -264,7 +264,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         // mark the parent Task as finished, this will recursively mark all
         // parent job as finished
         $parent = $this->getTask($parent_id);
-        $this->setFinished($parent);
+        $this->setFinishedExtraSettings($parent);
       }
     }
 
