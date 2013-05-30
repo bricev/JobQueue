@@ -353,7 +353,7 @@ class Worker implements WorkerInterface
       }
     }
 
-    catch (\Exception $e)
+    catch (\Exception $exception)
     {
       $this->log("Worker '$this' has encountered an error.", array(
           $exception->getMessage(),
