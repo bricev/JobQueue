@@ -8,6 +8,8 @@ use Libcast\JobQueue\Worker\WorkerInterface;
 use Libcast\JobQueue\Queue\QueueInterface;
 use Libcast\JobQueue\Task\Task;
 
+use Libcast\JobQueue\Notification\Notification;
+
 use Psr\Log\LoggerInterface;
 
 class Worker implements WorkerInterface
@@ -162,53 +164,6 @@ class Worker implements WorkerInterface
   }
 
   /**
-   * Increment the count of failed attemp for a given Task
-   * 
-   * @param   \Libcast\JobQueue\Task\Task $task
-   * @throws  \Libcast\JobQueue\Exception\WorkerException
-   */
-  protected function incrFailed(Task $task)
-  {
-    if (!$task->getId())
-    {
-      throw new WorkerException("Impossible to increment failure count for Task '$task'.");
-    }
-
-    if (!isset($this->failed_count[$task->getId()]))
-    {
-      $this->failed_count[$task->getId()] = 1;
-    }
-    else
-    {
-      $this->failed_count[$task->getId()]++;
-    }
-  }
-
-  /**
-   * Get the count of failed attempt for a given Task
-   * 
-   * @param   \Libcast\JobQueue\Task\Task $task
-   * @return  int
-   * @throws  \Libcast\JobQueue\Exception\WorkerException
-   */
-  protected function countFailed(Task $task)
-  {
-    if (!$task->getId())
-    {
-      throw new WorkerException("Impossible to count failures for Task '$task'.");
-    }
-
-    if (!isset($this->failed_count[$task->getId()]))
-    {
-      return 0;
-    }
-    else
-    {
-      return (int) $this->failed_count[$task->getId()];
-    }
-  }
-
-  /**
    * @param \Psr\Log\LoggerInterface $logger
    */
   protected function setLogger(LoggerInterface $logger)
@@ -242,9 +197,9 @@ class Worker implements WorkerInterface
     return $this->mailer;
   }
 
-  /**
-   * {@inheritdoc}
-   */
+    /**
+     * {@inheritdoc}
+     */
   public function run()
   {
     /* @hack avoid multiple worker startup to run a same Task twice */
@@ -312,14 +267,13 @@ class Worker implements WorkerInterface
               $task->setStatus(Task::STATUS_FINISHED);
               $queue->update($task);
               
-              // send notifications if any
-              if (!$task->getParentId() && $message = $task->getMessage())
+              // send notification
+              if (!$task->getParentId() && $notification = $task->getNotification())
               {
-                $this->getMailer()->send($message);
-                $this->log('A notification has been sent.', array(
-                    $message->getTo(),
-                    $message->getSubject(),
-                ));
+                $notification->setMailer($this->getMailer());
+                $notification->sendNotification(Notification::TYPE_SUCCESS);
+
+                $this->log('A success notification has been sent.');
               }
             }
           }
@@ -358,6 +312,15 @@ class Worker implements WorkerInterface
                 // mark Task as failed
                 $task->setStatus(Task::STATUS_FAILED);
                 $queue->update($task);
+
+                // send notification
+                if (!$task->getParentId() && $notification = $task->getNotification())
+                {
+                  $notification->setMailer($this->getMailer());
+                  $notification->sendNotification(Notification::TYPE_ERROR);
+
+                  $this->log('An error notification has been sent.');
+                }
               }
             }
 

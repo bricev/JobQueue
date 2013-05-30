@@ -13,7 +13,7 @@ use Psr\Log\LoggerInterface;
 abstract class AbstractJob implements JobInterface
 {
   /**
-   * @var \Libcast\JobQueue\Queue\QueueFactory
+   * @var \Libcast\JobQueue\Queue\QueueInterface
    */
   protected $queue = null;
 

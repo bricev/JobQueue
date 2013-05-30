@@ -16,6 +16,7 @@ use Libcast\JobQueue\Task\TaskInterface;
  * 
  * $prefix:task:lastid        string (incr)     unique Task id
  * $prefix:task:$id           string            stores Task data (json)
+ * $prefix:task:failed:$id    string (incr)     counts a Task failed atempts
  * $prefix:task:scheduled     sorted set        lists scheduled Tasks
  * $prefix:task:scheduled:$id string            stores scheduled Task data (json)
  * $prefix:task:children:$id  string (incr)     counts a Task children
@@ -100,11 +101,11 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     $enqueued = $this->getTask($task->getId());
 
     $update = true;
-
-    // if status change, trigger some extra actions
     if ($task->getStatus() !== $enqueued->getStatus())
     {
-      if (method_exists($this, $method = 'set'.ucfirst(strtolower($task->getStatus()))))
+      // if status change, trigger some extra actions
+      $method = 'set'.ucfirst(strtolower($task->getStatus())).'ExtraSettings';
+      if (method_exists($this, $method))
       {
         $update = $this->$method($task);
       }
@@ -112,64 +113,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
     if (false !== $update)
     {
+      // persist data
       $this->save($task);
     }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setRunning(TaskInterface $task)
-  {
-    return $this->setScore($task, self::SCORE_RUNNING);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setWaiting(TaskInterface $task)
-  {
-    return $this->setScore($task, $task->getParameter('priority'));
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setSuccess(TaskInterface $task)
-  {
-    return $task->setProgress(1);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setFailed(TaskInterface $task)
-  {
-    return $this->setScore($task, self::SCORE_FAILED);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setFinished(TaskInterface $task)
-  {
-    $this->remove($task);
-
-    if ($parent_id = $task->getParentId())
-    {
-      // if all children Tasks have been executed
-      if ((int) $this->client->get(self::PREFIX."task:children:$parent_id") <= 0)
-      {
-        // mark the parent Task as finished, this will recursively mark all
-        // parent job as finished
-        $parent = $this->getTask($parent_id);
-        $this->setFinished($parent);
-      }
-    }
-
-    $this->client->lpush(self::PREFIX.'task:finished', $task->getId());
-
-    return false;
   }
 
   /**
@@ -185,6 +131,8 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       $parent->updateChild($task);
       $this->update($parent);
     }
+
+    $this->log("Task '{$task->getId()}' saved", array(), 'debug');
 
     return $this->client->set(self::PREFIX."task:{$task->getId()}", $task->jsonExport());
   }
@@ -221,6 +169,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     $pipe->del(self::PREFIX."task:{$task->getId()}");
     $pipe->del(self::PREFIX."task:scheduled:{$task->getId()}");
     $pipe->del(self::PREFIX."task:children:{$task->getId()}");
+    $pipe->del(self::PREFIX."task:failed:{$task->getId()}");
     $pipe->zrem(self::PREFIX."profile:{$task->getOption('profile')}", $task->getId());
     $pipe->zrem(self::PREFIX.'profile:'.self::COMMON_PROFILE, $task->getId());
     $pipe->zrem(self::PREFIX.'task:scheduled', $task->getId());
@@ -256,6 +205,105 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     $pipe->zadd(self::PREFIX.'profile:'.self::COMMON_PROFILE, $score, $task->getId());
 
     return $pipe->execute();
+  }
+
+  /**
+   * 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @return mixed
+   */
+  public function setRunningExtraSettings(TaskInterface $task)
+  {
+    return $this->setScore($task, self::SCORE_RUNNING);
+  }
+
+  /**
+   * 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @return mixed
+   */
+  public function setWaitingExtraSettings(TaskInterface $task)
+  {
+    return $this->setScore($task, $task->getParameter('priority'));
+  }
+
+  /**
+   * 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @return mixed
+   */
+  public function setSuccessExtraSettings(TaskInterface $task)
+  {
+    return $task->setProgress(1);
+  }
+
+  /**
+   * 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @return mixed
+   */
+  public function setFailedExtraSettings(TaskInterface $task)
+  {
+    return $this->setScore($task, self::SCORE_FAILED);
+  }
+
+  /**
+   * 
+   * @param \Libcast\JobQueue\Task\TaskInterface $task
+   * @return false
+   */
+  public function setFinishedExtraSettings(TaskInterface $task)
+  {
+    $this->remove($task);
+
+    if ($parent_id = $task->getParentId())
+    {
+      // if all children Tasks have been executed
+      if ((int) $this->client->get(self::PREFIX."task:children:$parent_id") <= 0)
+      {
+        // mark the parent Task as finished, this will recursively mark all
+        // parent job as finished
+        $parent = $this->getTask($parent_id);
+        $this->setFinished($parent);
+      }
+    }
+
+    $this->client->lpush(self::PREFIX.'task:finished', $task->getId());
+
+    return false;
+  }
+
+  /**
+   * Increment the count of failed attemp for a given Task
+   * 
+   * @param   \Libcast\JobQueue\Task\Task $task
+   * @throws  \Libcast\JobQueue\Exception\QueueException
+   */
+  public function incrFailed(Task $task)
+  {
+    if (!$task->getId())
+    {
+      throw new QueueException("Impossible to increment failure count for Task '$task'.");
+    }
+
+    return $this->client->incr(self::PREFIX."task:failed:{$task->getId()}");;
+  }
+
+  /**
+   * Get the count of failed attempt for a given Task
+   * 
+   * @param   \Libcast\JobQueue\Task\Task $task
+   * @return  int
+   * @throws  \Libcast\JobQueue\Exception\QueueException
+   */
+  public function countFailed(Task $task)
+  {
+    if (!$task->getId())
+    {
+      throw new QueueException("Impossible to count failures for Task '$task'.");
+    }
+
+    return (int) $this->client->get(self::PREFIX."task:failed:{$task->getId()}");;
   }
 
   /**
