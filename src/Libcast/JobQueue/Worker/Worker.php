@@ -266,7 +266,7 @@ class Worker implements WorkerInterface
               // mark Task as finished
               $task->setStatus(Task::STATUS_FINISHED);
               $queue->update($task);
-              
+
               // send notification
               if (!$task->getParentId() && $notification = $task->getNotification())
               {
@@ -288,9 +288,9 @@ class Worker implements WorkerInterface
 
             try
             {
-              $this->incrFailed($task);
+              $queue->incrFailed($task);
 
-              $fail_count = $this->countFailed($task);
+              $fail_count = $queue->countFailed($task);
 
               // give the Task another chance...
               if (self::MAX_REQUEUE > $fail_count)

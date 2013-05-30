@@ -169,7 +169,6 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     $pipe->del(self::PREFIX."task:{$task->getId()}");
     $pipe->del(self::PREFIX."task:scheduled:{$task->getId()}");
     $pipe->del(self::PREFIX."task:children:{$task->getId()}");
-    $pipe->del(self::PREFIX."task:failed:{$task->getId()}");
     $pipe->zrem(self::PREFIX."profile:{$task->getOption('profile')}", $task->getId());
     $pipe->zrem(self::PREFIX.'profile:'.self::COMMON_PROFILE, $task->getId());
     $pipe->zrem(self::PREFIX.'task:scheduled', $task->getId());
@@ -268,7 +267,10 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       }
     }
 
-    $this->client->lpush(self::PREFIX.'task:finished', $task->getId());
+    $pipe = $this->client->pipeline();
+    $pipe->del(self::PREFIX."task:failed:{$task->getId()}");
+    $pipe->lpush(self::PREFIX.'task:finished', $task->getId());
+    $pipe->execute();
 
     return false;
   }
