@@ -4,6 +4,7 @@ namespace Libcast\JobQueue\Task;
 
 use Libcast\JobQueue\Job\JobInterface;
 use Libcast\JobQueue\Task\TaskInterface;
+use Libcast\JobQueue\Notification\Notification;
 
 interface TaskInterface
 {
@@ -94,9 +95,10 @@ interface TaskInterface
    * Calculate an average progress of Task and its children.
    * 
    * @param bool $foat False to get a human readable string instead of float
+   * @param bool $cumulate_children True calculate progress from Task and its children
    * @return float|string
    */
-  public function getProgress($float = true);
+  public function getProgress($float = true, $cumulate_children = true);
 
   /**
    * Return the creation date of the Task (auto generated, no public setter)
@@ -164,15 +166,15 @@ interface TaskInterface
 
   /**
    * 
-   * @param \Swift_Message $message
+   * @param \Libcast\JobQueue\Notification\Notification $notification
    */
-  public function setMessage(\Swift_Message $message);
+  public function setNotification(Notification $notification);
 
   /**
    * 
-   * @return \Swift_Message
+   * @return \Libcast\JobQueue\Notification\Notification
    */
-  public function getMessage();
+  public function getNotification();
 
   /**
    * Add a child to current Task

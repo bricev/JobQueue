@@ -5,6 +5,7 @@ namespace Libcast\JobQueue\Task;
 use Libcast\JobQueue\Exception\TaskException;
 use Libcast\JobQueue\Job\JobInterface;
 use Libcast\JobQueue\Task\TaskInterface;
+use Libcast\JobQueue\Notification\Notification;
 
 class Task implements TaskInterface
 {
@@ -67,9 +68,9 @@ class Task implements TaskInterface
   protected $parameters = array();
 
   /**
-   * @var \Swift_Message
+   * @var \Libcast\JobQueue\Notification\Notification
    */
-  protected $message;
+  protected $notification;
 
   /**
    * @var array
@@ -86,19 +87,19 @@ class Task implements TaskInterface
    * Required parameters may be required depending on the Job associated
    * with this Task
    * 
-   * @param \Libcast\JobQueue\Job\JobInterface  $job        Affect a job to the task
-   * @param array                               $options    Task options
-   * @param array                               $parameters Task parameters
-   * @param \Swift_Message                      $message    SwiftMailer message for notification
+   * @param \Libcast\JobQueue\Job\JobInterface  $job          Affect a job to the task
+   * @param array                               $options      Task options
+   * @param array                               $parameters   Task parameters
+   * @param Notification                        $notification Notification for succes and or alert
    */
-  function __construct(JobInterface $job, $options = array(), $parameters = array(), \Swift_Message $message = null)
+  function __construct(JobInterface $job, $options = array(), $parameters = array(), Notification $notification = null)
   {
     $this->setJob($job);
     $this->setOptions($options);
     $this->setParameters($parameters);
-    if ($message)
+    if ($notification)
     {
-      $this->setMessage($message);
+      $this->setNotification($notification);
     }
   }
 
@@ -251,8 +252,13 @@ class Task implements TaskInterface
   /**
    * {@inheritdoc}
    */
-  public function getProgress($float = true)
+  public function getProgress($float = true, $cumulate_children = true)
   {
+    if (!$cumulate_children)
+    {
+      return $float ? $this->progress : ($this->progress * 100).'%';
+    }
+
     $count = 1;
     $total = $this->progress;
 
@@ -400,17 +406,17 @@ class Task implements TaskInterface
   /**
    * {@inheritdoc}
    */
-  public function setMessage(\Swift_Message $message)
+  public function setNotification(Notification $notification)
   {
-    $this->message = $message;
+    $this->notification = $notification;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getMessage()
+  public function getNotification()
   {
-    return $this->message;
+    return $this->notification;
   }
 
   /**
@@ -485,7 +491,11 @@ class Task implements TaskInterface
       return null;
     }
 
-    $task = new Task(new $data['job'], $data['options'], $data['parameters'], unserialize($data['message']));
+    $task = new Task(new $data['job'], 
+            $data['options'], 
+            $data['parameters'], 
+            unserialize($data['notification']));
+
     $task->setId($data['id']);
     $task->setTag($data['tag']);
     $task->setParentId($data['parent_id']);
@@ -513,12 +523,12 @@ class Task implements TaskInterface
         'parent_id'     => $this->getParentId(),
         'job'           => $this->getJob()->getClassName(),
         'status'        => $this->getStatus(),
-        'progress'      => $this->getProgress(),
+        'progress'      => $this->getProgress(true, false),
         'created_at'    => $this->getCreatedAt(false),
         'scheduled_at'  => $this->getScheduledAt(false),
         'options'       => $this->getOptions(),
         'parameters'    => $this->getParameters(),
-        'message'       => serialize($this->getMessage()),
+        'notification'  => serialize($this->getNotification()),
         'children'      => array(),
     );
 
