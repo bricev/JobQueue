@@ -223,7 +223,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    */
   public function setWaitingExtraSettings(TaskInterface $task)
   {
-    return $this->setScore($task, $task->getParameter('priority'));
+    return $this->setScore($task, $task->getOption('priority'));
   }
 
   /**
