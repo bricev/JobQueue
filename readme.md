@@ -132,7 +132,7 @@ $task = new Task(
 $redis = new Client('tcp://localhost:6379');
 
 // load Queue
-$queue = QueueFactory::load($redis, $logger); 
+$queue = QueueFactory::load($redis); 
 /* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
 
 // add all Tasks to Queue
