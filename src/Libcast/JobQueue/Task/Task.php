@@ -397,7 +397,7 @@ class Task implements TaskInterface
   {
     if (!isset($this->parameters[$name]))
     {
-      throw new Exception\TaskException("The parameter '$name' does not exists.");
+      throw new TaskException("The parameter '$name' does not exists.");
     }
 
     return $this->parameters[$name];
