@@ -9,10 +9,13 @@ require realpath(__DIR__.'/../vendor/autoload.php');
 use Libcast\JobQueue\Task\Task;
 
 use Libcast\JobQueue\Job\DummyJob;
+use Libcast\JobQueue\Job\DummyLongJob;
 use Libcast\JobQueue\Job\FaultyJob;
 use Libcast\JobQueue\Job\FailingJob;
 
 use Libcast\JobQueue\Queue\QueueFactory;
+
+use Libcast\JobQueue\Notification\Notification;
 
 use Predis\Client;
 
@@ -61,7 +64,7 @@ $parent_basic = new Task(
 );
 
 $child_basic = new Task(
-        new DummyJob,
+        new DummyLongJob,
         array(),
         array(
             'dummytext' => 'child',
@@ -230,11 +233,21 @@ $parent_profiled->addChild($child_profiled);
 
 // ----------
 
-$message = \Swift_Message::newInstance()->
+$success = \Swift_Message::newInstance()->
         setSubject('The Task has been successfuly treated!')->
         setBody('Congratulation, the Task you submitted to JobQueue has been successfully treated. Cheers!')->
-        setFrom('jobqueue_sender@yopmail.com')->
+        setSender('jobqueue_sender@yopmail.com')->
         setTo('jobqueue_receiver@yopmail.com');
+
+$error = \Swift_Message::newInstance()->
+        setSubject('The Task has not been treated!')->
+        setBody('Sorry, the Task you submitted to JobQueue has not been treated.')->
+        setSender('jobqueue_sender@yopmail.com')->
+        setTo('jobqueue_receiver@yopmail.com');
+
+$notification = new Notification;
+$notification->addNotification($success, Notification::TYPE_SUCCESS);
+$notification->addNotification($error, Notification::TYPE_ERROR);
 
 $notified = new Task(
         new DummyJob,
@@ -243,7 +256,17 @@ $notified = new Task(
             'dummytext' => 'aaaaaa',
             'destination' => '/tmp/dummytest1',
         ),
-        $message
+        $notification
+);
+
+$failing_notified = new Task(
+        new FailingJob,
+        array(),
+        array(
+            'dummytext' => 'failed',
+            'destination' => '/tmp/failingtest',
+        ),
+        $notification
 );
 
 // ----------
@@ -267,3 +290,4 @@ $queue->add($profiled);         // 8
 $queue->add($faulty_profiled);  // 9
 $queue->add($parent_profiled);  // 10
 $queue->add($notified);         // 11
+$queue->add($failing_notified); // 12
