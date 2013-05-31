@@ -243,38 +243,46 @@ class Worker implements WorkerInterface
             $job->setup($task, $queue, $this->getLogger());
 
             // run Job
-            $job->execute();
-
-            // mark Task as success
-            $task->setStatus(Task::STATUS_SUCCESS);
-            $queue->update($task);
-
-            // try to enqueue child Tasks, 
-            $finished = true;
-            foreach ($task->getChildren() as $child)
+            if ($job->execute())
             {
-              /* @var $child \Libcast\JobQueue\Task\Task */
-              $child->setParentId($task->getId());
+              $this->log("Task '$task' has been successfuly treated.");
 
-              $queue->add($child);
-
-              $finished = false;
-            }
-
-            if ($finished)
-            {
-              // mark Task as finished
-              $task->setStatus(Task::STATUS_FINISHED);
+              // mark Task as success
+              $task->setStatus(Task::STATUS_SUCCESS);
               $queue->update($task);
 
-              // send notification
-              if (!$task->getParentId() && $notification = $task->getNotification())
+              // try to enqueue child Tasks, 
+              $finished = true;
+              foreach ($task->getChildren() as $child)
               {
-                $notification->setMailer($this->getMailer());
-                $notification->sendNotification(Notification::TYPE_SUCCESS);
+                /* @var $child \Libcast\JobQueue\Task\Task */
+                $child->setParentId($task->getId());
 
-                $this->log('A success notification has been sent.');
+                $queue->add($child);
+
+                $finished = false;
               }
+
+              if ($finished)
+              {
+                // mark Task as finished
+                $task->setStatus(Task::STATUS_FINISHED);
+                $queue->update($task);
+
+                // send notification
+                if (!$task->getParentId() && $notification = $task->getNotification())
+                {
+                  $notification->setMailer($this->getMailer());
+                  $notification->sendNotification(Notification::TYPE_SUCCESS);
+
+                  $this->log('A success notification has been sent.');
+                }
+              }
+            }
+            else
+            {
+              // this should not happen...
+              throw new WorkerException('Unknown error.');
             }
           }
 
