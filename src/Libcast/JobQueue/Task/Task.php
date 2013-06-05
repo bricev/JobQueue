@@ -491,10 +491,14 @@ class Task implements TaskInterface
       return null;
     }
 
+    $notification = isset($data['notification']) && $data['notification'] ? 
+            unserialize($data['notification']) : 
+            null;
+
     $task = new Task(new $data['job'], 
             $data['options'], 
             $data['parameters'], 
-            unserialize($data['notification']));
+            $notification instanceof Notification ? $notification : null);
 
     $task->setId($data['id']);
     $task->setTag($data['tag']);
