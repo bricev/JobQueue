@@ -34,11 +34,18 @@ abstract class AbstractQueue implements QueueInterface
   protected $logger;
 
   /**
-   * 
-   * @param object                    $client DB client (eg. \Predis\Client)
-   * @param \Psr\Log\LoggerInterface  $mailer
+   * @var \Swift_Mailer
    */
-  function __construct($client, LoggerInterface $logger = null)
+  protected $mailer;
+
+  /**
+   * 
+   * @param   object                    $client DB client (eg. \Predis\Client)
+   * @param   \Psr\Log\LoggerInterface  $logger 
+   * @param   \Swift_Mailer             $mailer For Notification sending
+   * @throws  \Libcast\JobQueue\Exception\QueueException
+   */
+  function __construct($client, LoggerInterface $logger = null, \Swift_Mailer $mailer = null)
   {
     if (!$client)
     {
@@ -50,6 +57,11 @@ abstract class AbstractQueue implements QueueInterface
     if ($logger)
     {
       $this->setLogger($logger);
+    }
+
+    if ($mailer)
+    {
+      $this->setMailer($mailer);
     }
   }
 
@@ -77,11 +89,30 @@ abstract class AbstractQueue implements QueueInterface
   }
 
   /**
+   * 
    * @return \Psr\Log\LoggerInterface 
    */
   protected function getLogger()
   {
     return $this->logger;
+  }
+
+  /**
+   * 
+   * @param \Swift_Mailer $mailer
+   */
+  protected function setMailer(\Swift_Mailer $mailer)
+  {
+    $this->mailer = $mailer;
+  }
+
+  /**
+   * 
+   * @return \Swift_Mailer
+   */
+  protected function getMailer()
+  {
+    return $this->mailer;
   }
 
   /**

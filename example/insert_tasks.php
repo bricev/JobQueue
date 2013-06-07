@@ -104,7 +104,7 @@ $parent_nested = new Task(
     );
 
         $child_nested_21 = new Task(
-                new FaultyJob,
+                new DummyJob,
                 array(),
                 array(
                     'dummytext' => 'child 21',
@@ -122,7 +122,7 @@ $parent_nested = new Task(
         );
 
             $child_nested_3 = new Task(
-                    new FailingJob,
+                    new DummyLongJob,
                     array(),
                     array(
                         'dummytext' => 'FAILING',

@@ -8,8 +8,6 @@ use Libcast\JobQueue\Worker\WorkerInterface;
 use Libcast\JobQueue\Queue\QueueInterface;
 use Libcast\JobQueue\Task\Task;
 
-use Libcast\JobQueue\Notification\Notification;
-
 use Psr\Log\LoggerInterface;
 
 class Worker implements WorkerInterface
@@ -51,11 +49,6 @@ class Worker implements WorkerInterface
   protected $logger;
 
   /**
-   * @var \Swift_Mailer
-   */
-  protected $mailer;
-
-  /**
    * Setup a Worker to connect the Queue.
    * The Worker will receive Tasks from Queue profiled sets.
    * Each Task will setup a Job that can be run (executed).
@@ -64,9 +57,8 @@ class Worker implements WorkerInterface
    * @param \Libcast\JobQueue\Queue\QueueInterface  $queue    Queue instance
    * @param array                                   $profiles Profiles names (sets of Tasks)
    * @param \Psr\Log\LoggerInterface                $logger   Implementation of Psr\Log interface
-   * @param \Swift_Mailer                           $mailer   Swift_Mailer instance
    */
-  function __construct($name, QueueInterface $queue, $profiles = array(), LoggerInterface $logger = null, \Swift_Mailer $mailer = null)
+  function __construct($name, QueueInterface $queue, $profiles = array(), LoggerInterface $logger = null)
   {
     $this->setName($name);
     $this->setStatus(self::STATUS_PAUSED);
@@ -75,10 +67,6 @@ class Worker implements WorkerInterface
     if ($logger)
     {
       $this->setLogger($logger);
-    }
-    if ($mailer)
-    {
-      $this->setMailer($mailer);
     }
 
     $this->configurePHP();
@@ -180,26 +168,8 @@ class Worker implements WorkerInterface
   }
 
   /**
-   * 
-   * @param \Swift_Mailer $mailer
+   * {@inheritdoc}
    */
-  protected function setMailer(\Swift_Mailer $mailer)
-  {
-    $this->mailer = $mailer;
-  }
-
-  /**
-   * 
-   * @return \Swift_Mailer
-   */
-  protected function getMailer()
-  {
-    return $this->mailer;
-  }
-
-    /**
-     * {@inheritdoc}
-     */
   public function run()
   {
     /* @hack avoid multiple worker startup to run a same Task twice */
@@ -268,15 +238,6 @@ class Worker implements WorkerInterface
                 // mark Task as finished
                 $task->setStatus(Task::STATUS_FINISHED);
                 $queue->update($task);
-
-                // send notification
-                if (!$task->getParentId() && $notification = $task->getNotification())
-                {
-                  $notification->setMailer($this->getMailer());
-                  $notification->sendNotification(Notification::TYPE_SUCCESS);
-
-                  $this->log('A success notification has been sent.');
-                }
               }
             }
             else
@@ -320,15 +281,6 @@ class Worker implements WorkerInterface
                 // mark Task as failed
                 $task->setStatus(Task::STATUS_FAILED);
                 $queue->update($task);
-
-                // send notification
-                if (!$task->getParentId() && $notification = $task->getNotification())
-                {
-                  $notification->setMailer($this->getMailer());
-                  $notification->sendNotification(Notification::TYPE_ERROR);
-
-                  $this->log('An error notification has been sent.');
-                }
               }
             }
 

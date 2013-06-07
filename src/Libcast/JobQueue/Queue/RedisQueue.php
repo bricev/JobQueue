@@ -11,6 +11,8 @@ use Libcast\JobQueue\Job\NullJob;
 use Libcast\JobQueue\Task\Task;
 use Libcast\JobQueue\Task\TaskInterface;
 
+use Libcast\JobQueue\Notification\Notification;
+
 /**
  * Redis Queue uses the following keys:
  * 
@@ -243,6 +245,15 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    */
   public function setFailedExtraSettings(TaskInterface $task)
   {
+    // send notification
+    if ($this->getMailer() && $notification = $task->getNotification())
+    {
+      $notification->setMailer($this->getMailer());
+      $notification->sendNotification(Notification::TYPE_ERROR);
+
+      $this->log('An error notification has been sent.');
+    }
+
     return $this->setScore($task, self::SCORE_FAILED);
   }
 
@@ -271,6 +282,15 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     $pipe->del(self::PREFIX."task:failed:{$task->getId()}");
     $pipe->lpush(self::PREFIX.'task:finished', $task->getId());
     $pipe->execute();
+
+    // send notification
+    if ($this->getMailer() && $notification = $task->getNotification())
+    {
+      $notification->setMailer($this->getMailer());
+      $notification->sendNotification(Notification::TYPE_SUCCESS);
+
+      $this->log('A success notification has been sent.');
+    }
 
     return false;
   }

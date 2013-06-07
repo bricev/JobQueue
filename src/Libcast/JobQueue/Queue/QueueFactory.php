@@ -3,17 +3,19 @@
 namespace Libcast\JobQueue\Queue;
 
 use Libcast\JobQueue\Exception\QueueException;
+use Psr\Log\LoggerInterface;
 
 class QueueFactory 
 {
   /**
    * Load a Queue based on a DB client set from parameters.
    * 
-   * @param mixed $parameters Client or array of parameters
-   * @param mixed $logger Logger object for debug
-   * @return Libcast\JobQueue\Queue\QueueInterface|false
+   * @param   mixed                     $parameters Client or array of parameters
+   * @param   \Psr\Log\LoggerInterface  $logger 
+   * @param   \Swift_Mailer             $mailer     For Notification sending
+   * @return  \Libcast\JobQueue\Queue\QueueInterface|false
    */
-  public static function load($parameters, $logger = null)
+  public static function load($parameters, LoggerInterface $logger = null, \Swift_Mailer $mailer = null)
   {
     if (!is_array($parameters))
     {
@@ -30,7 +32,7 @@ class QueueFactory
     switch (true)
     {
       case $parameters['client'] instanceof \Predis\Client :
-        return new RedisQueue($parameters['client'], $logger);
+        return new RedisQueue($parameters['client'], $logger, $mailer);
       
       default :
         throw new QueueException('The submitted client is not yet supported.');

@@ -55,8 +55,8 @@ $logger->pushHandler(new SwiftMailerHandler($mailer, $message, Logger::ERROR));
 $redis = new Client('tcp://localhost:6379');
 
 // get a Queue instance
-$queue = QueueFactory::load($redis, $logger);
+$queue = QueueFactory::load($redis, $logger, $mailer);
 
 // setup and start the Worker
-$worker = new Worker($name, $queue, $profiles, $logger, $mailer);
+$worker = new Worker($name, $queue, $profiles, $logger);
 $worker->run();
