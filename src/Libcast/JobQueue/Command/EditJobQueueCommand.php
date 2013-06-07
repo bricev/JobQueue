@@ -114,9 +114,10 @@ class EditJobQueueCommand extends JobQueueCommand
 
     if ($notification = $task->getNotification())
     {
+      $emails = array_keys((array) $notification->getSuccessNotification()->getTo());
       $table->addRow(array(
           'Key'   => 'Notification',
-          'Value' => implode(', ', (array) $notification->getSuccessNotification()->getTo()),
+          'Value' => implode(', ', $emails),
       ));
     }
 
