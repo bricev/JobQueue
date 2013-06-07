@@ -79,6 +79,47 @@ class Notification implements \Serializable
 
   /**
    * 
+   * @param   mixed   $type   alert|success|null
+   * @return  mixed           array|\Swift_Message
+   * @throws  \Libcast\JobQueue\Exception\NotificationException
+   */
+  public function getNotification($type = null)
+  {
+    if (in_array($type, self::getTypes()))
+    {
+      if (!isset($this->notifications[$type]))
+      {
+        throw new NotificationException("There is not '$type' notification.");
+      }
+
+      return $this->notifications[$type];
+    }
+
+    return $this->notifications;
+  }
+
+  /**
+   * 
+   * @return  \Swift_Message
+   * @throws  \Libcast\JobQueue\Exception\NotificationException
+   */
+  public function getSuccessNotification()
+  {
+    return $this->getNotification(self::TYPE_SUCCESS);
+  }
+
+  /**
+   * 
+   * @return  \Swift_Message
+   * @throws  \Libcast\JobQueue\Exception\NotificationException
+   */
+  public function getErrorNotification()
+  {
+    return $this->getNotification(self::TYPE_ERROR);
+  }
+
+  /**
+   * 
    * @param string $type alert|success
    * @throws \Libcast\JobQueue\Exception\NotificationException
    */
