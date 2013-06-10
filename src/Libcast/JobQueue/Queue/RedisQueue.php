@@ -74,13 +74,21 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     // count children only the first time a Task is added
     if ($parent_id = $task->getParentId())
     {
-      $pipe->incr(self::PREFIX."task:children:$parent_id");
-
       // update parent Task
       if ($parent = $this->getTask($parent_id))
       {
-        $parent->updateChild($task);
+        if ($parent->hasChild($task->getTag()))
+        {
+          $parent->updateChild($task);
+        }
+        else
+        {
+          $parent->addChild($task);
+        }
+
         $this->update($parent);
+
+        $pipe->incr(self::PREFIX."task:children:$parent_id");
       }
     }
 

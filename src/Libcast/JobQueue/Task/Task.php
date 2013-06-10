@@ -25,7 +25,7 @@ class Task implements TaskInterface
   /**
    * @var string
    */
-  protected $tag;
+  protected $tag = null;
 
   /**
    * @var integer
@@ -161,7 +161,7 @@ class Task implements TaskInterface
   {
     if (!$this->tag)
     {
-      $this->setTag(md5(microtime().rand(0, 9999)));
+      $this->setTag(md5(uniqid().rand(0, 9999)));
     }
 
     return $this->tag;
@@ -473,12 +473,20 @@ class Task implements TaskInterface
    */
   public function getChild($tag)
   {
-    if (!isset($this->children[$task->getTag()]))
+    if (!isset($this->children[$tag]))
     {
       throw new TaskException("Child with tag '{$task->getTag()}' does not exists.");
     }
 
     return $this->children[$tag];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasChild($tag)
+  {
+    return isset($this->children[$tag]);
   }
 
   /**

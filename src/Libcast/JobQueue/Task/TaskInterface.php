@@ -217,6 +217,14 @@ interface TaskInterface
   public function getChild($tag);
 
   /**
+   * Check if a Task's child exists based on its tag
+   * 
+   * @param string $tag Children's tag
+   * @return boolean
+   */
+  public function hasChild($tag);
+
+  /**
    * Import a json encoded Task and return a Task object
    * 
    * @param string $json Json encoded Task
