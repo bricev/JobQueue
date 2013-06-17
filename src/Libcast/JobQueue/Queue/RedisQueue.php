@@ -31,7 +31,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 {
   const PREFIX = 'libcast:jobqueue:';
 
-  const SCORE_FAILED = -1;
+  const SCORE_UNQUEUED = -1;
 
   const SCORE_RUNNING = 0;
 
@@ -110,18 +110,17 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
     $enqueued = $this->getTask($task->getId());
 
-    $update = true;
     if ($task->getStatus() !== $enqueued->getStatus())
     {
       // if status change, trigger some extra actions
-      $method = 'set'.ucfirst(strtolower($task->getStatus())).'ExtraSettings';
+      $method = 'do'.ucfirst(strtolower($task->getStatus())).'ExtraActions';
       if (method_exists($this, $method))
       {
-        $update = $this->$method($task);
+        $task = $this->$method($task);
       }
     }
 
-    if (false !== $update)
+    if ($task instanceof TaskInterface)
     {
       // persist data
       $this->save($task);
@@ -135,9 +134,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    */
   protected function save(TaskInterface $task)
   {
-    if ($parent_id = $task->getParentId())
+    $parent_id = $task->getParentId();
+    if ($parent_id && $parent = $this->getTask($parent_id))
     {
-      $parent = $this->getTask($parent_id);
       $parent->updateChild($task);
       $this->update($parent);
     }
@@ -197,7 +196,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
   {
     if (!is_int($score) || ($score < self::PRIORITY_MIN && !in_array($score, array(
         self::SCORE_RUNNING,
-        self::SCORE_FAILED,
+        self::SCORE_UNQUEUED,
     ))))
     {
       throw new QueueException("The Task '$task' can't have score '$score'.");
@@ -221,9 +220,11 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    * @param \Libcast\JobQueue\Task\TaskInterface $task
    * @return mixed
    */
-  public function setRunningExtraSettings(TaskInterface $task)
+  public function doRunningExtraActions(TaskInterface $task)
   {
-    return $this->setScore($task, self::SCORE_RUNNING);
+    $this->setScore($task, self::SCORE_RUNNING);
+
+    return $task;
   }
 
   /**
@@ -231,9 +232,11 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    * @param \Libcast\JobQueue\Task\TaskInterface $task
    * @return mixed
    */
-  public function setWaitingExtraSettings(TaskInterface $task)
+  public function doWaitingExtraActions(TaskInterface $task)
   {
-    return $this->setScore($task, $task->getOption('priority'));
+    $this->setScore($task, $task->getOption('priority'));
+
+    return $task;
   }
 
   /**
@@ -241,9 +244,13 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    * @param \Libcast\JobQueue\Task\TaskInterface $task
    * @return mixed
    */
-  public function setSuccessExtraSettings(TaskInterface $task)
+  public function doSuccessExtraActions(TaskInterface $task)
   {
-    return $task->setProgress(1);
+    $this->setScore($task, self::SCORE_UNQUEUED);
+
+    $task->setProgress(1);
+
+    return $task;
   }
 
   /**
@@ -251,7 +258,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    * @param \Libcast\JobQueue\Task\TaskInterface $task
    * @return mixed
    */
-  public function setFailedExtraSettings(TaskInterface $task)
+  public function doFailedExtraActions(TaskInterface $task)
   {
     // send notification
     if ($this->getMailer() && $notification = $task->getNotification())
@@ -262,7 +269,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       $this->log('An error notification has been sent.');
     }
 
-    return $this->setScore($task, self::SCORE_FAILED);
+    $this->setScore($task, self::SCORE_UNQUEUED);
+
+    return $task;
   }
 
   /**
@@ -270,7 +279,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
    * @param \Libcast\JobQueue\Task\TaskInterface $task
    * @return false
    */
-  public function setFinishedExtraSettings(TaskInterface $task)
+  public function doFinishedExtraActions(TaskInterface $task)
   {
     $this->remove($task);
 
@@ -282,7 +291,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         // mark the parent Task as finished, this will recursively mark all
         // parent job as finished
         $parent = $this->getTask($parent_id);
-        $this->setFinishedExtraSettings($parent);
+        $this->doFinishedExtraActions($parent);
       }
     }
 
@@ -300,7 +309,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       $this->log('A success notification has been sent.');
     }
 
-    return false;
+    return null;
   }
 
   /**
@@ -710,6 +719,28 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     }
 
     return Task::jsonImport($this->client->get(self::PREFIX."task:$next_id"));
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function reboot(array $profiles = array())
+  {
+    $profiles = array_merge($profiles, array(self::COMMON_PROFILE));
+    foreach ($profiles as $profile)
+    {
+      $key = self::PREFIX."profile:$profile";
+      $members = $this->client->zrangebyscore($key, 0, '('.self::PRIORITY_MIN);
+      foreach ($members as $member)
+      {
+        if ($task = $this->getTask($member))
+        {
+          // requeue Task
+          $task->setStatus(Task::STATUS_WAITING);
+          $this->update($task);
+        }
+      }
+    }
   }
 
   /**

@@ -91,6 +91,11 @@ interface QueueInterface
   public function getNextTask($set = null);
 
   /**
+   * Requeue all unfinished running Tasks
+   */
+  public function reboot(array $profiles = array());
+
+  /**
    * Empty Queue (clean all Tasks)
    */
   public function flush();
