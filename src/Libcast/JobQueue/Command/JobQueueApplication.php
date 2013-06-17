@@ -9,6 +9,7 @@ use Libcast\JobQueue\Command\ListJobQueueCommand;
 use Libcast\JobQueue\Command\EditJobQueueCommand;
 use Libcast\JobQueue\Command\DeleteJobQueueCommand;
 use Libcast\JobQueue\Command\QueueJobQueueCommand;
+use Libcast\JobQueue\Command\WorkerJobQueueCommand;
 
 use Libcast\JobQueue\Queue\QueueInterface;
 
@@ -55,6 +56,7 @@ class JobQueueApplication extends Application
     $defaultCommands[] = new DeleteJobQueueCommand;
     $defaultCommands[] = new FlushJobQueueCommand;
     $defaultCommands[] = new QueueJobQueueCommand;
+    $defaultCommands[] = new WorkerJobQueueCommand;
 
     return $defaultCommands;
   }
