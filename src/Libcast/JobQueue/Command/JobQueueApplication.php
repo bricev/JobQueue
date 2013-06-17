@@ -54,7 +54,6 @@ class JobQueueApplication extends Application
     $defaultCommands[] = new ListJobQueueCommand;
     $defaultCommands[] = new EditJobQueueCommand;
     $defaultCommands[] = new DeleteJobQueueCommand;
-    $defaultCommands[] = new FlushJobQueueCommand;
     $defaultCommands[] = new QueueJobQueueCommand;
     $defaultCommands[] = new WorkerJobQueueCommand;
 

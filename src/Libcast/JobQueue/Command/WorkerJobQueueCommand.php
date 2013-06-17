@@ -16,8 +16,8 @@ class WorkerJobQueueCommand extends JobQueueCommand
   {
     $this->setName('jobqueue:worker')->
             setDescription('Control local Workers')->
-            addArgument('action',       InputArgument::REQUIRED, 'stop|start|restart')->
-            addOption('profile',  'p',  InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'List of profiles');
+            addArgument('action', InputArgument::REQUIRED, 'stop|start|restart')->
+            addOption('profile', 'p', InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY, 'List of profiles');
 
     parent::configure();
   }
