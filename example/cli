@@ -14,9 +14,21 @@ use Libcast\JobQueue\Command\JobQueueApplication;
 use Libcast\JobQueue\Queue\QueueFactory;
 use Predis\Client;
 
+$workers = array(
+    realpath(__DIR__).'/worker',
+);
+
+$profiles = array(
+    'dummy-stuff',
+    'notsodummy',
+);
+
 // get a Queue instance
 $redis = new Client('tcp://localhost:6379');
 $queue = QueueFactory::load($redis);
 
-$application = new JobQueueApplication($queue);
+$application = new JobQueueApplication($queue, array(
+    'workers'   => $workers,
+    'profiles'  => $profiles,
+));
 $application->run();

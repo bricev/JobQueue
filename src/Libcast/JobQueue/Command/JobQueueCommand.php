@@ -16,18 +16,27 @@ class JobQueueCommand extends Command
    * @return \Libcast\JobQueue\Queue\QueueInterface
    */
   protected function getQueue()
+  {   
+    return $this->getApplication()->getQueue();
+  }
+  
+  /**
+   * Gets the application instance for this command.
+   *
+   * @return \Libcast\JobQueue\Command\JobQueueApplication
+   */
+  public function getApplication()
   {
-    $application = $this->getApplication(); 
-    /* @var $application \Libcast\JobQueue\Command\JobQueueApplication */
-   
+    $application = parent::getApplication();
+
     if (!$application instanceof JobQueueApplication)
     {
       throw new CommandException('This application is not valid.');
     }
 
-    return $application->getQueue();
+    return $application;
   }
-  
+
   protected function addLine($line = null)
   {
     if (!$line)
