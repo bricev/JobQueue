@@ -424,9 +424,9 @@ class Task implements TaskInterface
    */
   public function addChild(TaskInterface $task)
   {
-    if (in_array($task->getTag(), array_keys($this->getChildren())))
+    if ($this->hasChild($task))
     {
-      throw new TaskException("Child with tag '{$task->getTag()}' already exists.");
+      return $this->updateChild($task);
     }
 
     $task->setParentId($this->getId());
@@ -439,9 +439,9 @@ class Task implements TaskInterface
    */
   public function updateChild(TaskInterface $task)
   {
-    if (!isset($this->children[$task->getTag()]))
+    if (!$this->hasChild($task))
     {
-      throw new TaskException("Child with tag '{$task->getTag()}' does not exists.");
+      return $this->addChild($task);
     }
 
     $this->children[$task->getTag()] = $task;
@@ -452,12 +452,10 @@ class Task implements TaskInterface
    */
   public function removeChild(TaskInterface $task)
   {
-    if (!isset($this->children[$task->getTag()]))
+    if ($this->hasChild($task))
     {
-      throw new TaskException("Child with tag '{$task->getTag()}' does not exists.");
+      unset($this->children[$task->getTag()]);
     }
-
-    unset($this->children[$task->getTag()]);
   }
 
   /**
@@ -473,7 +471,7 @@ class Task implements TaskInterface
    */
   public function getChild($tag)
   {
-    if (!isset($this->children[$tag]))
+    if (!$this->hasChild($tag))
     {
       throw new TaskException("Child with tag '{$task->getTag()}' does not exists.");
     }
@@ -486,6 +484,11 @@ class Task implements TaskInterface
    */
   public function hasChild($tag)
   {
+    if ($tag instanceof Task)
+    {
+      $tag = $tag->getTag();
+    }
+
     return isset($this->children[$tag]);
   }
 

@@ -77,14 +77,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
       // update parent Task
       if ($parent = $this->getTask($parent_id))
       {
-        if ($parent->hasChild($task->getTag()))
-        {
-          $parent->updateChild($task);
-        }
-        else
-        {
-          $parent->addChild($task);
-        }
+        $parent->updateChild($task);
 
         $this->update($parent);
 
