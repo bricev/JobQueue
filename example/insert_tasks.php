@@ -7,17 +7,15 @@
 require realpath(__DIR__.'/../vendor/autoload.php');
 
 use Libcast\JobQueue\Task\Task;
-
-use Libcast\JobQueue\Job\DummyJob;
-use Libcast\JobQueue\Job\DummyLongJob;
-use Libcast\JobQueue\Job\FaultyJob;
-use Libcast\JobQueue\Job\FailingJob;
-
 use Libcast\JobQueue\Queue\QueueFactory;
-
 use Libcast\JobQueue\Notification\Notification;
 
 use Predis\Client;
+
+foreach (glob(__DIR__.'/Job/*Job.php') as $job)
+{
+  include $job;
+}
 
 // ----------
 
@@ -122,7 +120,7 @@ $parent_nested = new Task(
         );
 
             $child_nested_3 = new Task(
-                    new DummyLongJob,
+                    new FaultyJob,
                     array(),
                     array(
                         'dummytext' => 'FAILING',

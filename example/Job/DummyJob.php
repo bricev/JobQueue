@@ -1,8 +1,5 @@
 <?php
 
-namespace Libcast\JobQueue\Job;
-
-use Libcast\JobQueue\Exception\JobException;
 use Libcast\JobQueue\Job\AbstractJob;
 use Libcast\JobQueue\Job\JobInterface;
 
@@ -27,7 +24,7 @@ use Libcast\JobQueue\Job\JobInterface;
  *   * postRun() is executed after the Job
  *     - should run parent method at some point
  */
-class FaultyJob extends AbstractJob implements JobInterface
+class DummyJob extends AbstractJob implements JobInterface
 {
   protected function initialize()
   {
@@ -53,11 +50,6 @@ class FaultyJob extends AbstractJob implements JobInterface
       $this->setTaskProgress($i/$max);
 
       sleep(1);
-    }
-
-    if (rand(0, 100000) > 30000) 
-    {
-      throw new JobException('FaultyJob random error!');
     }
 
     return parent::run();

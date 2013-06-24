@@ -7,17 +7,25 @@
  * Run "php ./cli --help" to get help
  */
 
+// composer autoload
 require realpath(__DIR__.'/../vendor/autoload.php');
 
 use Libcast\JobQueue\Command\JobQueueApplication;
-
 use Libcast\JobQueue\Queue\QueueFactory;
 use Predis\Client;
 
+// include the Jobs you developped
+foreach (glob(__DIR__.'/Job/*Job.php') as $job)
+{
+  include $job;
+}
+
+// list your worker pathes to help with the CLI's worker features
 $workers = array(
     realpath(__DIR__).'/worker',
 );
 
+// list the profiles to help with the CLI's worker features
 $profiles = array(
     'dummy-stuff',
     'notsodummy',

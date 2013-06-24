@@ -5,7 +5,6 @@ namespace Libcast\JobQueue\Job;
 use Libcast\JobQueue\Exception\JobException;
 use Libcast\JobQueue\Job\AbstractJob;
 use Libcast\JobQueue\Job\JobInterface;
-use Libcast\JobQueue\Queue\AbstractQueue;
 
 class NullJob extends AbstractJob implements JobInterface
 {

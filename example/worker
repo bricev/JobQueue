@@ -13,6 +13,7 @@
  * The Queue is propulsed by Redis.
  */
 
+// composer autoload
 require realpath(__DIR__.'/../vendor/autoload.php');
 
 use Monolog\Logger;
@@ -23,6 +24,12 @@ use Predis\Client;
 
 use Libcast\JobQueue\Queue\QueueFactory;
 use Libcast\JobQueue\Worker\Worker;
+
+// include the Jobs you developped
+foreach (glob(__DIR__.'/Job/*Job.php') as $job)
+{
+  include $job;
+}
 
 // name of this Worker
 $name = 'example';
@@ -46,9 +53,10 @@ $message = \Swift_Message::newInstance()->
         setTo('alerts@libcast.com');
 
 // setup a Monolog logger
+$logfile = realpath(__DIR__.'/log');
 $logger = new Logger($name);
-$logger->pushHandler(new StreamHandler(realpath(__DIR__.'/../log')."/$name.log", Logger::INFO));
-$logger->pushHandler(new StreamHandler(realpath(__DIR__.'/../log').'/common.log', Logger::INFO));
+$logger->pushHandler(new StreamHandler("$logfile/$name.log", Logger::INFO));
+$logger->pushHandler(new StreamHandler("$logfile/common.log", Logger::INFO));
 $logger->pushHandler(new SwiftMailerHandler($mailer, $message, Logger::ERROR));
 
 // setup a Redis client (Predis)
