@@ -264,16 +264,17 @@ class RedisQueue extends AbstractQueue implements QueueInterface
      */
     public function doFinishedExtraActions(TaskInterface $task)
     {
+        $this->remove($task);
+
         if ($parent_id = $task->getParentId()) {
-            // if all children Tasks have been executed
+            // if current Task is a child
             if ((int) $this->client->get(self::PREFIX."task:children:$parent_id") <= 0) {
-                // mark the parent Task as finished, this will recursively mark all
-                // parent job as finished
+                // if all children Tasks have been executed,
+                // mark the parent Task as finished, 
+                // this will recursively mark all parent jobs as finished
                 $parent = $this->getTask($parent_id);
                 $this->doFinishedExtraActions($parent);
             }
-        } else {
-            $this->remove($task);
         }
 
         $pipe = $this->client->pipeline();
