@@ -26,32 +26,32 @@ use Libcast\JobQueue\Job\JobInterface;
  */
 class DummyJob extends AbstractJob implements JobInterface
 {
-  protected function initialize()
-  {
-    $this->setOptions(array(
-        'priority'  => 1,
-        'profile'   => 'dummy-stuff',
-    ));
-
-    $this->setRequiredParameters(array(
-        'destination',
-        'dummytext',
-    ));
-  }
-
-  protected function run()
-  {
-    $max = rand(2, 5);
-    for ($i = 1; $i <= $max; $i++)
+    protected function initialize()
     {
-      $time = time();
-      exec("echo '{$this->getParameter('dummytext')}:$time' >> {$this->getParameter('destination')}");
+        $this->setOptions(array(
+            'priority'  => 1,
+            'profile'   => 'dummy-stuff',
+        ));
 
-      $this->setTaskProgress($i/$max);
-
-      sleep(1);
+        $this->setRequiredParameters(array(
+            'destination',
+            'dummytext',
+        ));
     }
 
-    return parent::run();
-  }
+    protected function run()
+    {
+        $max = rand(2, 5);
+        for ($i = 1; $i <= $max; $i++) {
+            $time = time();
+
+            exec("echo '{$this->getParameter('dummytext')}:$time' >> {$this->getParameter('destination')}");
+
+            $this->setTaskProgress($i/$max);
+
+            sleep(1);
+        }
+
+        return parent::run();
+    }
 }

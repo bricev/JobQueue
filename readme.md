@@ -1,4 +1,4 @@
-PHP JobQueue composent
+PHP JobQueue component
 ======================
 
 Simple Job/Queue PHP composent to help applications distribute Tasks through 
@@ -116,7 +116,6 @@ require '/path/to/vendor/autoload.php';
 use Libcast\JobQueue\Task\Task;
 use Libcast\JobQueue\Job\DummyJob;
 use Libcast\JobQueue\Queue\QueueFactory;
-
 use Predis\Client;
 
 $task = new Task(

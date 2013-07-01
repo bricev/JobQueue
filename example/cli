@@ -15,9 +15,8 @@ use Libcast\JobQueue\Queue\QueueFactory;
 use Predis\Client;
 
 // include the Jobs you developped
-foreach (glob(__DIR__.'/Job/*Job.php') as $job)
-{
-  include $job;
+foreach (glob(__DIR__.'/Job/*Job.php') as $job) {
+    include $job;
 }
 
 // list your worker pathes to help with the CLI's worker features

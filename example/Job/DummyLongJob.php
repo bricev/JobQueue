@@ -26,31 +26,31 @@ use Libcast\JobQueue\Job\JobInterface;
  */
 class DummyLongJob extends AbstractJob implements JobInterface
 {
-  protected function initialize()
-  {
-    $this->setOptions(array(
-        'priority'  => 1,
-        'profile'   => 'dummy-stuff',
-    ));
-
-    $this->setRequiredParameters(array(
-        'destination',
-        'dummytext',
-    ));
-  }
-
-  protected function run()
-  {
-    for ($i = 1; $i <= 120; $i++)
+    protected function initialize()
     {
-      $time = time();
-      exec("echo '{$this->getParameter('dummytext')}:$time' >> {$this->getParameter('destination')}");
+        $this->setOptions(array(
+            'priority'  => 1,
+            'profile'   => 'dummy-stuff',
+        ));
 
-      $this->setTaskProgress($i/120);
-
-      sleep(1); // lasts 120 x 1s = 2 minutes
+        $this->setRequiredParameters(array(
+            'destination',
+            'dummytext',
+        ));
     }
 
-    return parent::run();
-  }
+    protected function run()
+    {
+        for ($i = 1; $i <= 120; $i++) {
+            $time = time();
+
+            exec("echo '{$this->getParameter('dummytext')}:$time' >> {$this->getParameter('destination')}");
+
+            $this->setTaskProgress($i/120);
+
+            sleep(1);
+        }
+
+        return parent::run();
+    }
 }

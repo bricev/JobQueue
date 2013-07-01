@@ -9,17 +9,15 @@ require realpath(__DIR__.'/../vendor/autoload.php');
 use Libcast\JobQueue\Task\Task;
 use Libcast\JobQueue\Queue\QueueFactory;
 use Libcast\JobQueue\Notification\Notification;
-
 use Predis\Client;
 
-foreach (glob(__DIR__.'/Job/*Job.php') as $job)
-{
-  include $job;
+foreach (glob(__DIR__.'/Job/*Job.php') as $job) {
+    include $job;
 }
 
-// ----------
+$tasks = array();
 
-$basic = new Task(
+$tasks['single'] = new Task(
         new DummyJob,
         array(),
         array(
@@ -28,31 +26,7 @@ $basic = new Task(
         )
 );
 
-// ----------
-
-$faulty = new Task(
-        new FaultyJob,
-        array(),
-        array(
-            'dummytext' => 'bbbbbb',
-            'destination' => '/tmp/faultytest2',
-        )
-);
-
-// ----------
-
-$failing = new Task(
-        new FailingJob,
-        array(),
-        array(
-            'dummytext' => 'failed',
-            'destination' => '/tmp/failingtest',
-        )
-);
-
-// ----------
-
-$parent_basic = new Task(
+$parent = new Task(
         new DummyJob,
         array(),
         array(
@@ -60,8 +34,7 @@ $parent_basic = new Task(
             'destination' => '/tmp/dummytest_with_child',
         )
 );
-
-$child_basic = new Task(
+$child = new Task(
         new DummyLongJob,
         array(),
         array(
@@ -69,96 +42,10 @@ $child_basic = new Task(
             'destination' => '/tmp/dummytest_with_child',
         )
 );
+$parent->addChild($child);
+$tasks['higher_priority'] = $parent;
 
-$parent_basic->addChild($child_basic);
-
-// ----------
-
-$parent_nested = new Task(
-        new DummyJob,
-        array(),
-        array(
-            'dummytext' => 'parent',
-            'destination' => '/tmp/dummytest_nested',
-        )
-);
-
-    $child_nested_11 = new Task(
-            new DummyJob,
-            array(),
-            array(
-                'dummytext' => 'child 11',
-                'destination' => '/tmp/dummytest_nested',
-            )
-    );
-
-    $child_nested_12 = new Task(
-            new DummyJob,
-            array(),
-            array(
-                'dummytext' => 'child 12',
-                'destination' => '/tmp/dummytest_nested',
-            )
-    );
-
-        $child_nested_21 = new Task(
-                new DummyJob,
-                array(),
-                array(
-                    'dummytext' => 'child 21',
-                    'destination' => '/tmp/dummytest_nested',
-                )
-        );
-
-        $child_nested_22 = new Task(
-                new DummyJob,
-                array(),
-                array(
-                    'dummytext' => 'child 22',
-                    'destination' => '/tmp/dummytest_nested',
-                )
-        );
-
-            $child_nested_3 = new Task(
-                    new FaultyJob,
-                    array(),
-                    array(
-                        'dummytext' => 'FAILING',
-                        'destination' => '/tmp/dummytest_nested',
-                    )
-            );
-            
-            $child_nested_22->addChild($child_nested_3);
-
-        $child_nested_23 = new Task(
-                new DummyJob,
-                array(),
-                array(
-                    'dummytext' => 'child 23',
-                    'destination' => '/tmp/dummytest_nested',
-                )
-        );
-        
-        $child_nested_12->addChild($child_nested_21);
-        $child_nested_12->addChild($child_nested_22);
-        $child_nested_12->addChild($child_nested_23);
-
-    $child_nested_13 = new Task(
-            new DummyJob,
-            array(),
-            array(
-                'dummytext' => 'child 13',
-                'destination' => '/tmp/dummytest_nested',
-            )
-    );
-    
-    $parent_nested->addChild($child_nested_11);
-    $parent_nested->addChild($child_nested_12);
-    $parent_nested->addChild($child_nested_13);
-
-// ----------
-
-$priority = new Task(
+$tasks['higher_priority'] = new Task(
         new DummyJob,
         array(
             'priority' => 9,
@@ -169,8 +56,6 @@ $priority = new Task(
         )
 );
 
-// ----------
-
 $scheduled = new Task(
         new DummyJob,
         array(),
@@ -179,11 +64,10 @@ $scheduled = new Task(
             'destination' => '/tmp/dummytest_scheduled',
         )
 );
-$scheduled->setScheduledAt(date('Y-m-d H:i:s', time() + 60)); // 1min after
+$scheduled->setScheduledAt(date('Y-m-d H:i:s', time() + 60));
+$tasks['scheduled'] = $scheduled;
 
-// ----------
-
-$profiled = new Task(
+$tasks['with_profile'] = new Task(
         new DummyJob,
         array(
             'profile' => 'notsodummy',
@@ -193,43 +77,6 @@ $profiled = new Task(
             'destination' => '/tmp/notsodummy',
         )
 );
-
-$faulty_profiled = new Task(
-        new FaultyJob,
-        array(
-            'profile' => 'notsodummy',
-        ),
-        array(
-            'dummytext' => 'aaaaaa',
-            'destination' => '/tmp/notsodummy_faulty',
-        )
-);
-
-$parent_profiled = new Task(
-        new DummyJob,
-        array(
-            'profile' => 'notsodummy',
-        ),
-        array(
-            'dummytext' => 'parent',
-            'destination' => '/tmp/notsodummy_profiled',
-        )
-);
-
-$child_profiled = new Task(
-        new DummyJob,
-        array(
-            'profile' => 'notsodummy',
-        ),
-        array(
-            'dummytext' => 'child',
-            'destination' => '/tmp/notsodummy_profiled',
-        )
-);
-
-$parent_profiled->addChild($child_profiled);
-
-// ----------
 
 $success = \Swift_Message::newInstance()->
         setSubject('The Task has been successfuly treated!')->
@@ -247,7 +94,7 @@ $notification = new Notification;
 $notification->addNotification($success, Notification::TYPE_SUCCESS);
 $notification->addNotification($error, Notification::TYPE_ERROR);
 
-$notified = new Task(
+$tasks['notified'] = new Task(
         new DummyJob,
         array(),
         array(
@@ -257,35 +104,11 @@ $notified = new Task(
         $notification
 );
 
-$failing_notified = new Task(
-        new FailingJob,
-        array(),
-        array(
-            'dummytext' => 'failed',
-            'destination' => '/tmp/failingtest',
-        ),
-        $notification
-);
-
-// ----------
-
-// setup a Redis client
-$redis = new Client('tcp://localhost:6379');
-
 // load Queue
-$queue = QueueFactory::load($redis); 
-/* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
+$redis = new Client('tcp://localhost:6379');
+$queue = QueueFactory::load($redis);
 
 // add all Tasks to Queue
-$queue->add($basic);            // 1
-$queue->add($faulty);           // 2
-$queue->add($failing);          // 3
-$queue->add($parent_basic);     // 4
-$queue->add($parent_nested);    // 5
-$queue->add($priority);         // 6
-$queue->add($scheduled);        // 7
-$queue->add($profiled);         // 8
-$queue->add($faulty_profiled);  // 9
-$queue->add($parent_profiled);  // 10
-$queue->add($notified);         // 11
-$queue->add($failing_notified); // 12
+foreach ($tasks as $task) {
+    $queue->add($task);
+}

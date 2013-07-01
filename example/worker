@@ -26,9 +26,8 @@ use Libcast\JobQueue\Queue\QueueFactory;
 use Libcast\JobQueue\Worker\Worker;
 
 // include the Jobs you developped
-foreach (glob(__DIR__.'/Job/*Job.php') as $job)
-{
-  include $job;
+foreach (glob(__DIR__.'/Job/*Job.php') as $job) {
+    include $job;
 }
 
 // name of this Worker
