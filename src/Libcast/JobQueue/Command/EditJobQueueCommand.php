@@ -49,13 +49,13 @@ class EditJobQueueCommand extends JobQueueCommand
         $update = false;
 
         if ($input->getOption('parent-id')) {
-            $task->setParentId($input->getOption('parent-id'));
+            $task->setParentId((int) $input->getOption('parent-id'));
             $update = true;
         }
 
         if ($input->getOption('priority')) {
             $task->setOptions(array_merge($task->getOptions(), array(
-                'priority' => $input->getOption('priority'),
+                'priority' => (int) $input->getOption('priority'),
             )));
             $update = true;
         }
@@ -109,7 +109,7 @@ class EditJobQueueCommand extends JobQueueCommand
         ));
         $table->addRow(array(
             'Key'   => 'Progress',
-            'Value' => $task->getProgress(false),
+            'Value' => $task->getProgress(true),
         ));
 
         if ($notification = $task->getNotification()) {
