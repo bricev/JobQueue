@@ -34,16 +34,52 @@ $parent = new Task(
             'destination' => '/tmp/dummytest_with_child',
         )
 );
-$child = new Task(
-        new DummyLongJob,
+$child_1 = new Task(
+        new DummyJob,
         array(),
         array(
-            'dummytext' => 'child',
+            'dummytext' => 'child_1',
             'destination' => '/tmp/dummytest_with_child',
         )
 );
-$parent->addChild($child);
-$tasks['higher_priority'] = $parent;
+$child_1_grandchild_a = new Task(
+        new DummyJob,
+        array(),
+        array(
+            'dummytext' => 'child_1_grandchild_a',
+            'destination' => '/tmp/dummytest_with_child',
+        )
+);
+$child_1_grandchild_a_grandgrandchild = new Task(
+        new DummyLongJob,
+        array(),
+        array(
+            'dummytext' => 'child_1_grandchild_a',
+            'destination' => '/tmp/dummytest_with_child',
+        )
+);
+$child_1_grandchild_a->addChild($child_1_grandchild_a_grandgrandchild);
+$child_1_grandchild_b = new Task(
+        new DummyJob,
+        array(),
+        array(
+            'dummytext' => 'child_1_grandchild_a',
+            'destination' => '/tmp/dummytest_with_child',
+        )
+);
+$child_1->addChild($child_1_grandchild_a);
+$child_1->addChild($child_1_grandchild_b);
+$child_2 = new Task(
+        new DummyJob,
+        array(),
+        array(
+            'dummytext' => 'child_2',
+            'destination' => '/tmp/dummytest_with_child',
+        )
+);
+$parent->addChild($child_1);
+$parent->addChild($child_2);
+$tasks['nested'] = $parent;
 
 $tasks['higher_priority'] = new Task(
         new DummyJob,
@@ -112,3 +148,4 @@ $queue = QueueFactory::load($redis);
 foreach ($tasks as $task) {
     $queue->add($task);
 }
+
