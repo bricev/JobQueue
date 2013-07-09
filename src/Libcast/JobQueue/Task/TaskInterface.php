@@ -135,12 +135,6 @@ interface TaskInterface
 
     /**
      * 
-     * @param array $options
-     */
-    public function setOptions($options);
-
-    /**
-     * 
      * @return array
      */
     public function getOptions();
@@ -152,12 +146,6 @@ interface TaskInterface
      * @throws \Libcast\JobQueue\Exception\TaskException
      */
     public function getOption($name);
-
-    /**
-     * 
-     * @param array $parameters
-     */
-    public function setParameters($parameters);
 
     /**
      * 
@@ -232,6 +220,13 @@ interface TaskInterface
      * @return boolean
      */
     public function hasChild($tag);
+
+    /**
+     * Count Task children recursively
+     * 
+     * @return int Total of children
+     */
+    public function countChildren();
 
     /**
      * Import a json encoded Task and return a Task object

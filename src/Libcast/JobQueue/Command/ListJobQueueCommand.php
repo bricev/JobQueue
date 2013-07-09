@@ -98,7 +98,7 @@ class ListJobQueueCommand extends JobQueueCommand
                     'Pty'     => $task->getOption('priority'),
                     'Profile' => $task->getOption('profile'),
                     'Job'     => $job,
-                    '%'       => $task->getProgress(false),
+                    '%'       => $task->getProgress(true),
                     'Status'  => $task->getStatus(),
                 ), $queue->getTaskStatus($task->getId()));
             }

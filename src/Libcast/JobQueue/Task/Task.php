@@ -109,6 +109,11 @@ class Task implements TaskInterface
     protected $children = array();
 
     /**
+     * @var int
+     */
+    protected $children_count = null;
+
+    /**
      * Create a new Task
      * 
      * Some options are required:
@@ -278,23 +283,48 @@ class Task implements TaskInterface
     /**
      * {@inheritdoc}
      */
-    public function getProgress($float = true, $cumulate_children = true)
+    public function getProgress($human_readable = false, $cumulate_children = true, $percentage = true)
     {
-        if (!$cumulate_children) {
-            return $float ? $this->progress : ($this->progress * 100).'%';
-        }
+        $progress = $this->progress;
 
-        $count = 1;
-        $total = $this->progress;
+        if (!$cumulate_children) {
+            return $human_readable ? sprintf('%d%%', $progress * 100) : $progress;
+        }
 
         foreach ($this->getChildren() as $child) {
-            $count++;
-            $total += $child->getProgress();
+            $progress += $child->getProgress(false, true, false);
         }
 
-        $percent = ceil(($total / $count) * 100) / 100;
+        if (!$percentage) {
+            return $progress;
+        }
 
-        return $float ? $percent : ($percent * 100).'%';
+        $task_count = $this->countChildren() + 1;
+        $progress = ceil(($progress / $task_count) * 100) / 100;
+
+        return $human_readable ? sprintf('%d%%', $progress * 100) : $progress;
+    }
+
+    /**
+     * 
+     * @param float $float
+     * @param bool  $percentage 
+     * @param bool  $absolute_value
+     * @param int   $task_count 
+     */
+    protected function formatProgress($float, $human_readable, $absolute_value, $task_count = 1)
+    {
+        if ($absolute_value) {
+            return $float;
+        }
+
+        $progress = ceil(($float / $task_count) * 100) / 100;
+
+        if ($human_readable) {
+            return ($progress * 100).'%';
+        }
+
+        return $progress;
     }
 
     /**
@@ -350,9 +380,10 @@ class Task implements TaskInterface
     }
 
     /**
-     * {@inheritdoc}
+     * 
+     * @param array $options
      */
-    public function setOptions($options)
+    protected function setOptions($options)
     {
         if ($job = $this->getJob()) {
             $options = array_merge($job->getOptions(), $options);
@@ -382,9 +413,10 @@ class Task implements TaskInterface
     }
 
     /**
-     * {@inheritdoc}
+     * 
+     * @param array $parameters
      */
-    public function setParameters($parameters)
+    protected function setParameters($parameters)
     {
         if ($job = $this->getJob()) {
             $parameters = array_merge($job->getParameters(), $parameters);
@@ -438,6 +470,11 @@ class Task implements TaskInterface
             return $this->updateChild($task);
         }
 
+        if ($this->children_count)
+        {
+            $this->children_count++;
+        }
+
         $task->setParentId($this->getId());
 
         $this->children[$task->getTag()] = $task;
@@ -461,6 +498,11 @@ class Task implements TaskInterface
     public function removeChild(TaskInterface $task)
     {
         if ($this->hasChild($task)) {
+            if ($this->children_count)
+            {
+                $this->children_count--;
+            }
+
             unset($this->children[$task->getTag()]);
         }
     }
@@ -495,6 +537,21 @@ class Task implements TaskInterface
         }
 
         return isset($this->children[$tag]);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function countChildren()
+    {
+        $count = count($this->getChildren());
+
+        foreach ($this->getChildren() as $child) {
+            /* @var $child Task */
+            $count += $child->countChildren();
+        }
+
+        return $count;
     }
 
     /**
@@ -536,18 +593,18 @@ class Task implements TaskInterface
     public function jsonExport()
     {
         $array = array(
-            'id'            => $this->getId(),
-            'tag'           => $this->getTag(),
-            'parent_id'     => $this->getParentId(),
-            'job'           => $this->getJob()->getClassName(),
-            'status'        => $this->getStatus(),
-            'progress'      => $this->getProgress(true, false),
-            'created_at'    => $this->getCreatedAt(false),
-            'scheduled_at'  => $this->getScheduledAt(false),
-            'options'       => $this->getOptions(),
-            'parameters'    => $this->getParameters(),
-            'notification'  => serialize($this->getNotification()),
-            'children'      => array(),
+            'id'             => $this->getId(),
+            'tag'            => $this->getTag(),
+            'parent_id'      => $this->getParentId(),
+            'job'            => $this->getJob()->getClassName(),
+            'status'         => $this->getStatus(),
+            'progress'       => $this->getProgress(false, false),
+            'created_at'     => $this->getCreatedAt(false),
+            'scheduled_at'   => $this->getScheduledAt(false),
+            'options'        => $this->getOptions(),
+            'parameters'     => $this->getParameters(),
+            'notification'   => serialize($this->getNotification()),
+            'children'       => array(),
         );
 
         foreach ($this->getChildren() as $child) {

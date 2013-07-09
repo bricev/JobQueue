@@ -57,6 +57,23 @@ interface QueueInterface
     public function unschedule(TaskInterface $task);
 
     /**
+     * Increment the count of failed attemp for a given Task
+     * 
+     * @param   \Libcast\JobQueue\Task\Task $task
+     * @throws  \Libcast\JobQueue\Exception\QueueException
+     */
+    public function incrFailed(TaskInterface $task);
+
+    /**
+     * Get the count of failed attempt for a given Task
+     * 
+     * @param   \Libcast\JobQueue\Task\Task $task
+     * @return  int
+     * @throws  \Libcast\JobQueue\Exception\QueueException
+     */
+    public function countFailed(TaskInterface $task);
+
+    /**
      * Lists all Tasks from Queue
      * 
      * @param   string $sort_by     Sort by option (priority|profile|status)

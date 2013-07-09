@@ -22,16 +22,16 @@ use Libcast\JobQueue\Notification\Notification;
 /**
  * Redis Queue uses the following keys:
  * 
- * $prefix:task:lastid        string (incr)     unique Task id
- * $prefix:task:$id           string            stores Task data (json)
- * $prefix:task:failed:$id    string (incr)     counts a Task failed atempts
- * $prefix:task:scheduled     sorted set        lists scheduled Tasks
- * $prefix:task:scheduled:$id string            stores scheduled Task data (json)
- * $prefix:task:children:$id  string (incr)     counts a Task children
- * $prefix:task:finished      list              lists finished Tasks (logs)
- * $prefix:profile:$profile   sorted set        lists Tasks from a Queue's profile
- * $prefix:profile:common     sorted set        lists all Tasks from Queue
- * $prefix:union:$hash        sorted set union  union of Queue profiles (temporary)
+ * $prefix:task:lastid                string (incr)     unique Task id
+ * $prefix:task:$id                   string            stores Task data (json)
+ * $prefix:task:$id:children:finished string (incr)     counts Task's finished children
+ * $prefix:task:failed:$id            string (incr)     counts a Task failed atempts
+ * $prefix:task:scheduled             sorted set        lists scheduled Tasks
+ * $prefix:task:scheduled:$id         string            stores scheduled Task data (json)
+ * $prefix:task:finished              list              lists finished Tasks (logs)
+ * $prefix:profile:$profile           sorted set        lists Tasks from a Queue's profile
+ * $prefix:profile:common             sorted set        lists all Tasks from Queue
+ * $prefix:union:$hash                sorted set union  union of Queue profiles (temporary)
  */
 class RedisQueue extends AbstractQueue implements QueueInterface
 {
@@ -73,15 +73,11 @@ class RedisQueue extends AbstractQueue implements QueueInterface
             $this->schedule($task, $task->getScheduledAt(false));
         }
 
-        if ($parent_id = $task->getParentId()) {
+        $parent_id = $task->getParentId();
+        if ($parent_id && $parent = $this->getTask($parent_id)) {
             // update parent Task
-            if ($parent = $this->getTask($parent_id)) {
-                $parent->updateChild($task);
-
-                $this->update($parent);
-
-                $pipe->incr(self::PREFIX."task:children:$parent_id");
-            }
+            $parent->updateChild($task);
+            $this->update($parent);
         }
 
         $pipe->execute();
@@ -96,11 +92,17 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     {
         $this->log("Task '{$task->getId()}' updated", array(
             'status'    => $task->getStatus(),
-            'progress'  => $task->getProgress(false),
+            'progress'  => $task->getProgress(true),
             'children'  => count($task->getChildren()),
         ), 'debug');
 
         $enqueued = $this->getTask($task->getId());
+
+        // if priority change, edit score
+        if ($task->getOption('priority') !== $enqueued->getOption('priority') &&
+                Task::STATUS_WAITING === $task->getStatus()) {
+            $this->setScore($task, (int) $task->getOption('priority'));
+        }
 
         // if status change, trigger some extra actions
         if ($task->getStatus() !== $enqueued->getStatus()) {
@@ -150,19 +152,17 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
         $pipe = $this->client->pipeline();
 
-        if ($parent_id = $task->getParentId()) {
-            $pipe->decr(self::PREFIX."task:children:$parent_id");
-
+        $parent_id = $task->getParentId();
+        if ($update_parent && $parent_id && $parent = $this->getTask($parent_id)) {
             // update parent Task
-            if ($update_parent && $parent = $this->getTask($parent_id)) {
-                $parent->removeChild($task);
-                $this->update($parent);
-            }
+            $parent->removeChild($task);
+            $this->update($parent);
         }
 
-        $pipe->del(self::PREFIX."task:{$task->getId()}");
-        $pipe->del(self::PREFIX."task:scheduled:{$task->getId()}");
-        $pipe->del(self::PREFIX."task:children:{$task->getId()}");
+        $pipe->del(self::PREFIX."task:$task");
+        $pipe->del(self::PREFIX."task:$task:children:finished");
+        $pipe->del(self::PREFIX."task:scheduled:$task");
+        $pipe->del(self::PREFIX."task:failed:$task");
         $pipe->zrem(self::PREFIX."profile:{$task->getOption('profile')}", $task->getId());
         $pipe->zrem(self::PREFIX.'profile:'.self::COMMON_PROFILE, $task->getId());
         $pipe->zrem(self::PREFIX.'task:scheduled', $task->getId());
@@ -264,23 +264,23 @@ class RedisQueue extends AbstractQueue implements QueueInterface
      */
     public function doFinishedExtraActions(TaskInterface $task)
     {
-        $this->remove($task);
+        $parent_id = $task->getParentId();
+        if ($parent_id && $parent = $this->getTask($parent_id)) {
+            // count parent's finished children
+            $this->incrFinishedChildren($parent);
 
-        if ($parent_id = $task->getParentId()) {
-            // if current Task is a child
-            if ((int) $this->client->get(self::PREFIX."task:children:$parent_id") <= 0) {
+            if ($this->isComplete($parent)) {
                 // if all children Tasks have been executed,
                 // mark the parent Task as finished, 
                 // this will recursively mark all parent jobs as finished
-                $parent = $this->getTask($parent_id);
                 $this->doFinishedExtraActions($parent);
             }
+        } else {
+            $this->remove($task);
         }
 
-        $pipe = $this->client->pipeline();
-        $pipe->del(self::PREFIX."task:failed:{$task->getId()}");
-        $pipe->lpush(self::PREFIX.'task:finished', $task->getId());
-        $pipe->execute();
+        // add Task to the finished list
+        $this->client->lpush(self::PREFIX.'task:finished', $task->getId());
 
         // send notification
         if ($this->getMailer() && $notification = $task->getNotification()) {
@@ -294,34 +294,66 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     }
 
     /**
-     * Increment the count of failed attemp for a given Task
+     * Increment the count of finished children of a Task
      * 
      * @param   \Libcast\JobQueue\Task\Task $task
      * @throws  \Libcast\JobQueue\Exception\QueueException
      */
-    public function incrFailed(Task $task)
+    protected function incrFinishedChildren(TaskInterface $task)
     {
         if (!$task->getId()) {
-            throw new QueueException("Impossible to increment failure count for Task '$task'.");
+            throw new QueueException("Impossible to increment finished count for Task '$task'.");
         }
 
-        return $this->client->incr(self::PREFIX."task:failed:{$task->getId()}");;
+        $parent_id = $task->getParentId();
+        if ($parent_id && $parent = $this->getTask($parent_id)) {
+            $this->incrFinishedChildren($parent);
+        }
+
+        return $this->client->incr(self::PREFIX."task:$task:children:finished");
     }
 
     /**
-     * Get the count of failed attempt for a given Task
+     * Check if all the children of a Task are finished
      * 
      * @param   \Libcast\JobQueue\Task\Task $task
      * @return  int
      * @throws  \Libcast\JobQueue\Exception\QueueException
      */
-    public function countFailed(Task $task)
+    protected function isComplete(TaskInterface $task)
+    {
+        if (!$task->getId()) {
+            throw new QueueException("Impossible to count finished children of Task '$task'.");
+        }
+
+        $finished = $this->client->get(self::PREFIX."task:$task:children:finished");
+        $total    = $task->countChildren();
+
+        return (int) $finished === (int) $total;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function incrFailed(TaskInterface $task)
+    {
+        if (!$task->getId()) {
+            throw new QueueException("Impossible to increment failure count for Task '$task'.");
+        }
+
+        return $this->client->incr(self::PREFIX."task:failed:$task");
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function countFailed(TaskInterface $task)
     {
         if (!$task->getId()) {
             throw new QueueException("Impossible to count failures for Task '$task'.");
         }
 
-        return (int) $this->client->get(self::PREFIX."task:failed:{$task->getId()}");;
+        return (int) $this->client->get(self::PREFIX."task:failed:$task");
     }
 
     /**
