@@ -5,7 +5,7 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
@@ -72,7 +72,7 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * 
+     *
      * @param array   $options  Array of required option names
      */
     protected function setRequiredOptions($options)
@@ -81,7 +81,7 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * 
+     *
      * @param array   $options  Array of options to set up
      */
     protected function setOptions($options)
@@ -165,7 +165,7 @@ abstract class AbstractJob implements JobInterface
 
     /**
      * Sets a PSR valid logger
-     * 
+     *
      * @param   \Psr\Log\LoggerInterface  $logger
      */
     protected function setLogger(LoggerInterface $logger)
@@ -174,7 +174,7 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
-     * @return \Psr\Log\LoggerInterface 
+     * @return \Psr\Log\LoggerInterface
      */
     protected function getLogger()
     {
@@ -183,7 +183,7 @@ abstract class AbstractJob implements JobInterface
 
     /**
      * Log message only if a logger has been set
-     * 
+     *
      * @param   string  $message
      * @param   array   $contaxt
      * @param   string  $level    info|warning|error|debug
@@ -197,7 +197,7 @@ abstract class AbstractJob implements JobInterface
 
     /**
      * Log an error
-     * 
+     *
      * @param   string  $message
      * @param   array   $contaxt
      */
@@ -208,7 +208,7 @@ abstract class AbstractJob implements JobInterface
 
     /**
      * Makes sure all $required_args are listed in $args list.
-     * 
+     *
      * @param array   $args           Array of arguments
      * @param array   $required_args  List of mandatory arguments
      * @param string  $arg_type       argument|option|parameter
@@ -220,9 +220,9 @@ abstract class AbstractJob implements JobInterface
                 throw new JobException("The $arg_type '$arg' is missing.");
             }
 
-            if (!strstr($this->getClassName(), 'NullJob') 
-                    && 'option' === $arg_type 
-                    && 'priority' === $arg 
+            if (!strstr($this->getClassName(), 'NullJob')
+                    && 'option' === $arg_type
+                    && 'priority' === $arg
                     && (!is_int($args[$arg]) || $args[$arg] < AbstractQueue::PRIORITY_MIN)) {
                 throw new JobException(sprintf(
                                 'Task priority must be bigger or equal to \'%d\'. Value \'%d\' given.',
@@ -236,7 +236,7 @@ abstract class AbstractJob implements JobInterface
 
     /**
      * Update Task's progress and persist data
-     * 
+     *
      * @param   float $percent
      * @throws  \Libcast\JobQueue\Exception\JobException
      */
@@ -306,7 +306,7 @@ abstract class AbstractJob implements JobInterface
     /**
      * {@inheritdoc}
      */
-    public function execute() 
+    public function execute()
     {
         if (!$queue = $this->queue) {
             throw new JobException('A Queue is required to run a Job.');

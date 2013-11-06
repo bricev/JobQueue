@@ -1,13 +1,13 @@
 PHP JobQueue component
 ======================
 
-Simple Job/Queue PHP composent to help applications distribute Tasks through 
+Simple Job/Queue PHP composent to help applications distribute Tasks through
 multiple workers.
 
-Tasks may have children (sub tasks that are added to Queue when their parents 
+Tasks may have children (sub tasks that are added to Queue when their parents
 have been successfuly executed).
 
-Queue enables to follow Tasks progress. A Task reach 100% progress when all its 
+Queue enables to follow Tasks progress. A Task reach 100% progress when all its
 children have been finished too.
 
 Currently only Redis has been integrated to store Queue data.
@@ -16,21 +16,21 @@ Vocabulary:
 
   * **Job** define the work
 
-  * **Task** register all options and params to run Jobs, set priority and 
+  * **Task** register all options and params to run Jobs, set priority and
     profile, track progress
 
   * **Queue** store and manage Tasks, provide Tasks for Workers
 
-  * **Worker** takes Tasks from Queue to setup Jobs and execute them, respect 
+  * **Worker** takes Tasks from Queue to setup Jobs and execute them, respect
     priority order
 
-  * **priority** from 1 (lesser) to +inf, sets the order in which Tasks are 
+  * **priority** from 1 (lesser) to +inf, sets the order in which Tasks are
     submitted to Workers
 
-  * **profile** affected to Tasks, Workers are then set up to only take Tasks 
+  * **profile** affected to Tasks, Workers are then set up to only take Tasks
     having certain profiles
 
-  * **status** a Task may have one of the following profiles: 
+  * **status** a Task may have one of the following profiles:
     - `pending`  not in Queue yet
     - `waiting`  in Queue
     - `running`  currently setting up a Job that is executed
@@ -52,38 +52,11 @@ Write a Job
 
 Jobs are simple class that must extend the `AbstractJob` parent class.
 
-Jobs must be setup through an `inithialize()` method that must at least provide 
-a name and may add some Job default options and parameters, or set some required 
+Jobs must be setup through an `inithialize()` method that must at least provide
+a name and may add some Job default options and parameters, or set some required
 options and parameters.
 
-The following file may illustrate how to create a Job:
-
-```php
-<?php
-
-namespace Libcast\Job\Job;
-
-use Libcast\Job\Job\AbstractJob;
-use Libcast\Job\Job\JobInterface;
-
-class DummyJob extends AbstractJob implements JobInterface
-{
-  protected function initialize()
-  {	
-    $this->setOptions(array(
-        'priority'  => 0,
-        'profile'   => 'dummy-stuff',
-    ));
-  }
-
-  protected function run()
-  {
-    // do stuff...
-
-    return true;
-  }
-}
-```
+See example/Job to view a Job example.
 
 Usefull methods:
 
@@ -94,19 +67,11 @@ Usefull methods:
   * `$this->setTaskProgress($float)` to track Job progress while running
 
 
-Write a Worker
---------------
-
-See /example/worker to understand how to write your own Workers.
-
-Ubuntu/Debian users may use /example/worker.conf to set up an `upstart` script 
-in order to daemonize their Workers.
-
-
 Add Tasks to Queue
 ------------------
 
-Here is an example of how you create and add Tasks to Queue:
+Here is an example of how you create and add Tasks to Queue (you can also look
+at the `job:add-dummy` command):
 
 ```php
 <?php
@@ -114,7 +79,6 @@ Here is an example of how you create and add Tasks to Queue:
 require '/path/to/vendor/autoload.php';
 
 use Libcast\JobQueue\Task\Task;
-use Libcast\JobQueue\Job\DummyJob;
 use Libcast\JobQueue\Queue\QueueFactory;
 use Predis\Client;
 
@@ -131,8 +95,7 @@ $task = new Task(
 $redis = new Client('tcp://localhost:6379');
 
 // load Queue
-$queue = QueueFactory::load($redis); 
-/* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
+$queue = QueueFactory::load($redis);
 
 // add all Tasks to Queue
 $queue->add($task);
@@ -142,5 +105,31 @@ $queue->add($task);
 CLI
 ---
 
-This component comes with a cli application.
-See /example/cli for more details.
+### Synopsis
+
+    job
+      job:add-dummy     Add dummy jobs to the queue, for testing purpose
+      job:delete        Delete a Task
+      job:edit          Edit a Task
+      job:list          List jobs from the queue
+    queue
+      queue:flush       Flush the queue
+      queue:reboot      Reboot the queue
+    upstart
+      upstart:control   Control workers via upstart
+      upstart:install   Install workers' conf in /etc/init/
+    worker
+      worker:run        Run a worker
+
+A typical command would look like:
+
+    bin/jobqueue job:add-dummy example/config.php
+    bin/jobqueue job:list example/config.php
+    bin/jobqueue worker:run w1 example/config.php
+    bin/jobqueue upstart:control status example/config.php
+
+
+You can also deploy a worker as an upstart service (in `/etc/init/`).
+
+    # Ubuntu
+    sudo bin/jobqueue upstart:install example/config.php
