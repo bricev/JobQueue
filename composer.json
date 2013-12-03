@@ -10,8 +10,8 @@
         "predis/predis": "0.8",
         "symfony/console": "~2.1",
         "symfony/process": "~2.1",
-        "symfony/filesystem": "~2.1"
-
+        "symfony/filesystem": "~2.1",
+        "pimple/pimple": "~1.1"
     },
     "suggest": {
         "swiftmailer/swiftmailer": "Allows workers to email logs"
