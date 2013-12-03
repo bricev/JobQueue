@@ -31,7 +31,7 @@ class StartUpstartCommand extends UpstartCommand
     {
         $workers = $this->getWorkerList($input);
         foreach ($workers as $name) {
-            $this->jobQueue['queue']->reboot($this->jobQueue[$name]);
+            $this->jobQueue['queue']->reboot($this->jobQueue['workers'][$name]);
             if (!$this->ping($name)) {
                 $process = $this->start($name);
                 $this->finishProcess($process, $output);
