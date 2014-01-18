@@ -5,33 +5,34 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
-namespace Libcast\JobQueue\Command;
+namespace Libcast\JobQueue\Console\Command;
 
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Libcast\JobQueue\Exception\CommandException;
-use Libcast\JobQueue\Command\JobQueueCommand;
+use Libcast\JobQueue\Console\Command\Command;
 use Libcast\JobQueue\Command\OutputTable;
 use Libcast\JobQueue\Task\Task;
 
-class EditJobQueueCommand extends JobQueueCommand
+class EditJobCommand extends Command
 {
     protected function configure()
     {
-        $this->
-                setName('jobqueue:edit')->
-                setDescription('Edit a Task')->
-                addArgument('id',             InputArgument::REQUIRED,     'Task Id')->
-                addOption('parent-id',  'i',  InputOption::VALUE_OPTIONAL, 'Set parent Id (Eg. 123)', null)->
-                addOption('priority',   'p',  InputOption::VALUE_OPTIONAL, 'Set priority (1, 2, ...)', null)->
-                addOption('profile',    'f',  InputOption::VALUE_OPTIONAL, 'Set profile (eg. "high-cpu")', null)->
-                addOption('status',     's',  InputOption::VALUE_OPTIONAL, 'Set status (pending|waiting|running|success|failed|finished)', null);
+        $this
+            ->setName('job:edit')
+            ->setDescription('Edit a Task')
+            ->addArgument('id',             InputArgument::REQUIRED,     'Task Id')
+            ->addOption('parent-id',  'i',  InputOption::VALUE_OPTIONAL, 'Set parent Id (Eg. 123)', null)
+            ->addOption('priority',   'p',  InputOption::VALUE_OPTIONAL, 'Set priority (1, 2, ...)', null)
+            ->addOption('profile',    'f',  InputOption::VALUE_OPTIONAL, 'Set profile (eg. "high-cpu")', null)
+            ->addOption('status',     's',  InputOption::VALUE_OPTIONAL, 'Set status (pending|waiting|running|success|failed|finished)', null)
+        ;
 
         parent::configure();
     }

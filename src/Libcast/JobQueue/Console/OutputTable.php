@@ -5,11 +5,11 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
-namespace Libcast\JobQueue\Command;
+namespace Libcast\JobQueue\Console;
 
 use Libcast\JobQueue\Exception\CommandException;
 
@@ -122,7 +122,7 @@ class OutputTable
 
             $value = $row < 0 ? $column : $this->getCell($column, $row);
 
-            $string .= $this->padCell($value, 
+            $string .= $this->padCell($value,
                     $this->getColumnWidth($column),
                     $this->getColumnAlign($column));
 
@@ -157,7 +157,7 @@ class OutputTable
           throw new CommandException("Their is no value for column '$column', row '$row'.");
         }
 
-        return $this->rows[$row][$column]; 
+        return $this->rows[$row][$column];
     }
 
     protected function getTableWidth()

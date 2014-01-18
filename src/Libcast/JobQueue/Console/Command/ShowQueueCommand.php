@@ -5,34 +5,35 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
-namespace Libcast\JobQueue\Command;
+namespace Libcast\JobQueue\Console\Command;
 
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
-use Libcast\JobQueue\Command\JobQueueCommand;
-use Libcast\JobQueue\Command\OutputTable;
+use Libcast\JobQueue\Console\Command\Command;
+use Libcast\JobQueue\Console\OutputTable;
 
-class ListJobQueueCommand extends JobQueueCommand
+class ShowQueueCommand extends Command
 {
     protected function configure()
     {
-        $this->
-                setName('jobqueue:list')->
-                setDescription('List Tasks from the Queue')->
-                addOption('sort-by',  't',  InputOption::VALUE_OPTIONAL,  'Sort by (priority|profile|status)', 'priority')->
-                addOption('order',    'o',  InputOption::VALUE_OPTIONAL,  'Order (asc|desc)', 'desc')->
-                addOption('priority', 'p',  InputOption::VALUE_OPTIONAL,  'Filter by priority (1, 2, ...)', null)->
-                addOption('profile',  'l',  InputOption::VALUE_OPTIONAL,  'Filter by profile (eg. "high-cpu")', null)->
-                addOption('status',   's',  InputOption::VALUE_OPTIONAL,  'Filter by status (pending|waiting|running|success|failed|finished)', null)->
-                addOption('follow',   'f',  InputOption::VALUE_NONE,      'Refresh screen, display Queue Tasks in real time');
-
         parent::configure();
+        $this
+            ->setName('queue:show')
+            ->setDescription('List jobs from the queue')
+            ->addOption('sort-by',  't',  InputOption::VALUE_OPTIONAL,  'Sort by (priority|profile|status)', 'priority')
+            ->addOption('order',    'o',  InputOption::VALUE_OPTIONAL,  'Order (asc|desc)', 'desc')
+            ->addOption('priority', 'p',  InputOption::VALUE_OPTIONAL,  'Filter by priority (1, 2, ...)', null)
+            ->addOption('profile',  'l',  InputOption::VALUE_OPTIONAL,  'Filter by profile (eg. "high-cpu")', null)
+            ->addOption('status',   's',  InputOption::VALUE_OPTIONAL,  'Filter by status (pending|waiting|running|success|failed|finished)', null)
+            ->addOption('follow',   'f',  InputOption::VALUE_NONE,      'Refresh screen, display Queue Tasks in real time')
+        ;
+
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -58,13 +59,11 @@ class ListJobQueueCommand extends JobQueueCommand
 
     protected function listTasks(InputInterface $input, OutputInterface $output)
     {
-        $queue = $this->getQueue();
-
-        $tasks = $queue->getTasks(
-                $input->getOption('sort-by'), 
-                $input->getOption('order'), 
-                (int) $input->getOption('priority'), 
-                $input->getOption('profile'), 
+        $tasks = $this->jobQueue['queue']->getTasks(
+                $input->getOption('sort-by'),
+                $input->getOption('order'),
+                (int) $input->getOption('priority'),
+                $input->getOption('profile'),
                 $input->getOption('status')
         );
 
@@ -100,7 +99,7 @@ class ListJobQueueCommand extends JobQueueCommand
                     'Job'     => $job,
                     '%'       => $task->getProgress(true),
                     'Status'  => $task->getStatus(),
-                ), $queue->getTaskStatus($task->getId()));
+                ), $this->jobQueue['queue']->getTaskStatus($task->getId()));
             }
 
             $output->getFormatter()->setStyle('pending',  new OutputFormatterStyle('white'));

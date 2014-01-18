@@ -2,16 +2,22 @@
     "name": "libcast/jobqueue",
     "type": "library",
     "description": "Job/Queue system that execute Tasks through Workers",
-    "homepage": "http://libcast.com",
+    "homepage": "   ",
     "license": "MIT",
     "require": {
         "php": ">=5.3.0",
         "monolog/monolog": "1.4.0",
         "predis/predis": "0.8",
         "symfony/console": "~2.1",
-        "swiftmailer/swiftmailer": ">=5.0.0,<5.1-dev"
+        "symfony/process": "~2.1",
+        "symfony/filesystem": "~2.1",
+        "pimple/pimple": "~1.1"
+    },
+    "suggest": {
+        "swiftmailer/swiftmailer": "Allows workers to email logs"
     },
     "autoload": {
         "psr-0": {"Libcast": "src/"}
-    }
+    },
+    "bin": [ "bin/jobqueue" ]
 }
