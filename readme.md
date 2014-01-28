@@ -107,24 +107,26 @@ CLI
 
 ### Synopsis
 
-    job
-      job:add-dummy     Add dummy jobs to the queue, for testing purpose
-      job:delete        Delete a Task
-      job:edit          Edit a Task
-      job:list          List jobs from the queue
     queue
       queue:flush       Flush the queue
       queue:reboot      Reboot the queue
+      queue:show        List jobs from the queue
+    task
+      task:add          Add a Task
+      task:delete       Delete a Task
+      task:edit         Edit a Task
     upstart
-      upstart:control   Control workers via upstart
+      upstart:info      Give info and status for workers
       upstart:install   Install workers' conf in /etc/init/
+      upstart:start     Proxy task to start workers via upstart
+      upstart:status    Proxy task to get workers' status via upstart
+      upstart:stop      Proxy task to stop workers via upstart
     worker
       worker:run        Run a worker
 
 A typical command would look like:
 
-    bin/jobqueue job:add-dummy example/config.php
-    bin/jobqueue job:list example/config.php
+    bin/jobqueue queue:show example/config.php
     bin/jobqueue worker:run w1 example/config.php
     bin/jobqueue upstart:control status example/config.php
 
