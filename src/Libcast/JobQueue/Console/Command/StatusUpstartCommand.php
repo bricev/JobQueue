@@ -30,6 +30,13 @@ class StatusUpstartCommand extends UpstartCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $workers = $this->getWorkerList($input);
+
+        if (empty($workers)) {
+            $output->writeln("");
+            $output->writeln("There is no running worker.");
+            $output->writeln("");
+        }
+
         foreach ($workers as $name) {
             $process = $this->status($name);
             $this->finishProcess($process, $output);

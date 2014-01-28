@@ -45,16 +45,17 @@ class InstallUpstartCommand extends UpstartCommand
         // to lauch the upstart service.
         $this->configFilePath = realpath($input->getArgument('config'));
 
-        if (!$this->upstartDir || !is_dir($this->upstartDir) || !is_writable($this->upstartDir)) {
-            $output->writeln("<error>  `{$this->upstartDir}` do not exist or is not writable. You may try with "
-              . "sudo or install upstart (at your own risks).  </error>");
+        if (!$this->upstartDir
+                || !is_dir($this->upstartDir)
+                || !is_writable($this->upstartDir)) {
+            $output->writeln("<error>'{$this->upstartDir}' do not exist or is not writable. You may try with sudo or install upstart (at your own risks).</error>");
             return;
         }
 
         $installState = false;
         $workers = $this->getWorkerList($input, $installState);
         if (empty($workers)) {
-            $output->writeln("<comment> No uninstalled worker found. Nothing done. </comment>");
+            $output->writeln('<comment> No uninstalled worker found. Nothing done. </comment>');
         }
         foreach ($workers as $name) {
             $this->install($name, $output);

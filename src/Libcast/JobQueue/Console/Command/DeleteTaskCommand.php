@@ -16,12 +16,12 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Libcast\JobQueue\Console\Command\Command;
 
-class DeleteJobCommand extends Command
+class DeleteTaskCommand extends Command
 {
     protected function configure()
     {
         $this
-            ->setName('job:delete')
+            ->setName('task:delete')
             ->setDescription('Delete a Task')
             ->addArgument('id', InputArgument::REQUIRED, 'Task Id')
         ;

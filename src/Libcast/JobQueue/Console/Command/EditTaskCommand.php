@@ -17,15 +17,15 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Libcast\JobQueue\Exception\CommandException;
 use Libcast\JobQueue\Console\Command\Command;
-use Libcast\JobQueue\Command\OutputTable;
+use Libcast\JobQueue\Console\OutputTable;
 use Libcast\JobQueue\Task\Task;
 
-class EditJobCommand extends Command
+class EditTaskCommand extends Command
 {
     protected function configure()
     {
         $this
-            ->setName('job:edit')
+            ->setName('task:edit')
             ->setDescription('Edit a Task')
             ->addArgument('id',             InputArgument::REQUIRED,     'Task Id')
             ->addOption('parent-id',  'i',  InputOption::VALUE_OPTIONAL, 'Set parent Id (Eg. 123)', null)

@@ -11,11 +11,9 @@
 
 namespace Libcast\JobQueue\Console\Command;
 
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Libcast\JobQueue\Console\Command\UpstartCommand;
-use Libcast\JobQueue\Worker\Worker;
 use Libcast\JobQueue\Console\OutputTable;
 
 class InfoUpstartCommand extends UpstartCommand
@@ -50,13 +48,11 @@ class InfoUpstartCommand extends UpstartCommand
         foreach ($workers as $worker) {
             if (!$this->workerConfIsInstalled($worker)) {
                 $status = "Conf not installed";
-            }
-            else {
+            } else {
                 $process = $this->status($worker);
                 if (!$process->isSuccessful()) {
                     $status = "Conf is installed, but upstart may not be installed";
-                }
-                else {
+                } else {
                     $status = $process->getOutput();
                 }
             }

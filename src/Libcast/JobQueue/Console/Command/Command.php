@@ -31,6 +31,11 @@ class Command extends BaseCommand
         );
     }
 
+    protected function getQueue()
+    {
+        return $this->jobQueue['queue'];
+    }
+
     /**
      * @see Command
      */
