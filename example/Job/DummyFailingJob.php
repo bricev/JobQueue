@@ -1,6 +1,10 @@
 <?php
+
+namespace Libcast\JobQueue\TestJob;
+
 use Libcast\JobQueue\Job\AbstractJob;
 use Libcast\JobQueue\Job\JobInterface;
+use Libcast\JobQueue\Exception\JobException;
 
 /**
  * This is a Job class example.
@@ -23,7 +27,7 @@ use Libcast\JobQueue\Job\JobInterface;
  *   * postRun() is executed after the Job
  *     - should run parent method at some point
  */
-class DummyLongJob extends AbstractJob implements JobInterface
+class DummyFailingJob extends AbstractJob implements JobInterface
 {
     protected function initialize()
     {
@@ -31,25 +35,10 @@ class DummyLongJob extends AbstractJob implements JobInterface
             'priority'  => 1,
             'profile'   => 'dummy-stuff',
         ));
-
-        $this->setRequiredParameters(array(
-            'destination',
-            'dummytext',
-        ));
     }
 
     protected function run()
     {
-        for ($i = 1; $i <= 120; $i++) {
-            $time = time();
-
-            exec("echo '{$this->getParameter('dummytext')}:$time' >> {$this->getParameter('destination')}");
-
-            $this->setTaskProgress($i/120);
-
-            sleep(1);
-        }
-
-        return parent::run();
+        throw new JobException('Dummy Job fails!');
     }
 }

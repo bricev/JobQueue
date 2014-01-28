@@ -1,4 +1,7 @@
 <?php
+
+namespace Libcast\JobQueue\TestJob;
+
 use Libcast\JobQueue\Job\AbstractJob;
 use Libcast\JobQueue\Job\JobInterface;
 
@@ -35,7 +38,6 @@ class DummyJob extends AbstractJob implements JobInterface
 
         $this->setRequiredParameters(array(
             'destination',
-            'dummytext',
         ));
     }
 
@@ -45,7 +47,7 @@ class DummyJob extends AbstractJob implements JobInterface
         for ($i = 1; $i <= $max; $i++) {
             $time = time();
 
-            exec("echo '{$this->getParameter('dummytext')}:$time' >> {$this->getParameter('destination')}");
+            exec("echo '$time' >> {$this->getParameter('destination')}");
 
             $this->setTaskProgress($i/$max);
 
