@@ -5,7 +5,7 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
@@ -21,7 +21,7 @@ use Libcast\JobQueue\Notification\Notification;
 
 /**
  * Redis Queue uses the following keys:
- * 
+ *
  * $prefix:task:lastid                string (incr)     unique Task id
  * $prefix:task:$id                   string            stores Task data (json)
  * $prefix:task:$id:children:finished string (incr)     counts Task's finished children
@@ -61,13 +61,13 @@ class RedisQueue extends AbstractQueue implements QueueInterface
             $pipe->set(self::PREFIX."task:{$task->getId()}", $task->jsonExport());
 
             // affect Task to its Queue profile's set
-            $pipe->zadd(self::PREFIX."profile:{$task->getOption('profile')}", 
-                    $task->getOption('priority'), 
+            $pipe->zadd(self::PREFIX."profile:{$task->getOption('profile')}",
+                    $task->getOption('priority'),
                     $task->getId());
 
             // add Task to Queue's common set
-            $pipe->zadd(self::PREFIX.'profile:'.self::COMMON_PROFILE, 
-                    $task->getOption('priority'), 
+            $pipe->zadd(self::PREFIX.'profile:'.self::COMMON_PROFILE,
+                    $task->getOption('priority'),
                     $task->getId());
         } else {
             $this->schedule($task, $task->getScheduledAt(false));
@@ -82,46 +82,12 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
         $pipe->execute();
 
-        return $id;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function update(TaskInterface $task)
-    {
-        $this->log("Task '{$task->getId()}' updated", array(
-            'status'    => $task->getStatus(),
-            'progress'  => $task->getProgress(true),
-            'children'  => count($task->getChildren()),
-        ), 'debug');
-
-        $enqueued = $this->getTask($task->getId());
-
-        // if priority change, edit score
-        if ($task->getOption('priority') !== $enqueued->getOption('priority') &&
-                Task::STATUS_WAITING === $task->getStatus()) {
-            $this->setScore($task, (int) $task->getOption('priority'));
-        }
-
-        // if status change, trigger some extra actions
-        if ($task->getStatus() !== $enqueued->getStatus()) {
-            $method = 'do'.ucfirst(strtolower($task->getStatus())).'ExtraActions';
-
-            if (method_exists($this, $method)) {
-                $task = $this->$method($task);
-            }
-        }
-
-        // persist data only if extra action returns a Task
-        if ($task instanceof TaskInterface) {
-            $this->save($task);
-        }
+        return $task->getId();
     }
 
     /**
      * Persist Task data into Queue, update parent
-     * 
+     *
      * @param \Libcast\JobQueue\Task\TaskInterface $task
      */
     protected function save(TaskInterface $task)
@@ -140,7 +106,158 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     /**
      * {@inheritdoc}
      */
-    public function remove(TaskInterface $task, $update_parent = true)
+    public function update(TaskInterface $task)
+    {
+        $this->log("Task '{$task->getId()}' updated", array(
+            'status'    => $task->getStatus(),
+            'progress'  => $task->getProgress(true),
+            'children'  => count($task->getChildren()),
+        ), 'debug');
+
+        $enqueued = $this->getTask($task->getId());
+
+        if ($task->getStatus() !== $enqueued->getStatus()) {
+            // if status change, trigger some extra actions
+            $status = ucfirst(strtolower($task->getStatus()));
+            $method = "set{$status}Status";
+
+            if (method_exists($this, $method)) {
+                $task = $this->$method($task);
+            }
+        } elseif ($task->getOption('priority') !== $enqueued->getOption('priority')) {
+            // if priority change, edit score
+            switch ($task->getStatus()) {
+                case Task::STATUS_PENDING:
+                case Task::STATUS_SUCCESS:
+                case Task::STATUS_FAILED:
+                    $this->setScore($task, self::SCORE_UNQUEUED);
+                case Task::STATUS_WAITING:
+                    $this->setScore($task, (int) $task->getOption('priority'));
+                    break;
+            }
+        }
+
+        // persist data only if extra action returns a Task
+        if ($task instanceof TaskInterface) {
+            $this->save($task);
+        }
+    }
+
+    /**
+     *
+     * @param \Libcast\JobQueue\Task\TaskInterface $task
+     * @return mixed
+     */
+    public function setPendingStatus(TaskInterface $task)
+    {
+        $task->setProgress(0);
+
+        return $task;
+    }
+
+    /**
+     *
+     * @param \Libcast\JobQueue\Task\TaskInterface $task
+     * @return mixed
+     */
+    public function setWaitingStatus(TaskInterface $task)
+    {
+        $enqueued = $this->getTask($task->getId());
+        $this->setScore($task, $enqueued->getOption('priority'));
+
+        $task->setProgress(0);
+
+        return $task;
+    }
+
+    /**
+     *
+     * @param \Libcast\JobQueue\Task\TaskInterface $task
+     * @return mixed
+     */
+    public function setRunningStatus(TaskInterface $task)
+    {
+        $this->setScore($task, self::SCORE_RUNNING);
+
+        $task->setProgress(0);
+
+        return $task;
+    }
+
+    /**
+     *
+     * @param \Libcast\JobQueue\Task\TaskInterface $task
+     * @return mixed
+     */
+    public function setSuccessStatus(TaskInterface $task)
+    {
+        $this->setScore($task, self::SCORE_UNQUEUED);
+
+        $task->setProgress(1);
+
+        return $task;
+    }
+
+    /**
+     *
+     * @param \Libcast\JobQueue\Task\TaskInterface $task
+     * @return mixed
+     */
+    public function setFailedStatus(TaskInterface $task)
+    {
+        // send notification
+        if ($this->getMailer() && $notification = $task->getNotification()) {
+            $notification->setMailer($this->getMailer());
+            $notification->sendNotification(Notification::TYPE_ERROR);
+
+            $this->log('An error notification has been sent.');
+        }
+
+        $this->setScore($task, self::SCORE_UNQUEUED);
+
+        return $task;
+    }
+
+    /**
+     *
+     * @param \Libcast\JobQueue\Task\TaskInterface $task
+     * @return null
+     */
+    public function setFinishedStatus(TaskInterface $task)
+    {
+        $parent_id = $task->getParentId();
+        if ($parent_id && $parent = $this->getTask($parent_id)) {
+            // count parent's finished children
+            $this->incrFinishedChildren($parent);
+
+            if ($this->isComplete($parent)) {
+                // if all children Tasks have been executed,
+                // mark the parent Task as finished,
+                // this will recursively mark all parent jobs as finished
+                $this->setFinishedStatus($parent);
+            }
+        } else {
+            $this->remove($task);
+        }
+
+        // add Task to the finished list
+        $this->client->lpush(self::PREFIX.'task:finished', $task->getId());
+
+        // send notification
+        if ($this->getMailer() && $notification = $task->getNotification()) {
+            $notification->setMailer($this->getMailer());
+            $notification->sendNotification(Notification::TYPE_SUCCESS);
+
+            $this->log('A success notification has been sent.');
+        }
+
+        return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function remove(TaskInterface $task, $update_parent = true, $delete_failed_count = true)
     {
         foreach ($task->getChildren() as $child) {
             $this->remove($child, false);
@@ -162,19 +279,22 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         $pipe->del(self::PREFIX."task:$task");
         $pipe->del(self::PREFIX."task:$task:children:finished");
         $pipe->del(self::PREFIX."task:scheduled:$task");
-        $pipe->del(self::PREFIX."task:failed:$task");
         $pipe->zrem(self::PREFIX."profile:{$task->getOption('profile')}", $task->getId());
         $pipe->zrem(self::PREFIX.'profile:'.self::COMMON_PROFILE, $task->getId());
         $pipe->zrem(self::PREFIX.'task:scheduled', $task->getId());
+
+        if ($delete_failed_count) {
+            $pipe->del(self::PREFIX."task:failed:$task");
+        }
 
         return $pipe->execute();
     }
 
     /**
      * Edit the Task entry score from its Redis profiled sets
-     * 
+     *
      * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @param int $score 
+     * @param int $score
      * @throws \Libcast\JobQueue\Exception\QueueException
      */
     protected function setScore(TaskInterface $task, $score)
@@ -200,102 +320,8 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     }
 
     /**
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @return mixed
-     */
-    public function doRunningExtraActions(TaskInterface $task)
-    {
-        $this->setScore($task, self::SCORE_RUNNING);
-
-        return $task;
-    }
-
-    /**
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @return mixed
-     */
-    public function doWaitingExtraActions(TaskInterface $task)
-    {
-        $this->setScore($task, $task->getOption('priority'));
-
-        return $task;
-    }
-
-    /**
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @return mixed
-     */
-    public function doSuccessExtraActions(TaskInterface $task)
-    {
-        $this->setScore($task, self::SCORE_UNQUEUED);
-
-        $task->setProgress(1);
-
-        return $task;
-    }
-
-    /**
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @return mixed
-     */
-    public function doFailedExtraActions(TaskInterface $task)
-    {
-        // send notification
-        if ($this->getMailer() && $notification = $task->getNotification()) {
-            $notification->setMailer($this->getMailer());
-            $notification->sendNotification(Notification::TYPE_ERROR);
-
-            $this->log('An error notification has been sent.');
-        }
-
-        $this->setScore($task, self::SCORE_UNQUEUED);
-
-        return $task;
-    }
-
-    /**
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @return false
-     */
-    public function doFinishedExtraActions(TaskInterface $task)
-    {
-        $parent_id = $task->getParentId();
-        if ($parent_id && $parent = $this->getTask($parent_id)) {
-            // count parent's finished children
-            $this->incrFinishedChildren($parent);
-
-            if ($this->isComplete($parent)) {
-                // if all children Tasks have been executed,
-                // mark the parent Task as finished, 
-                // this will recursively mark all parent jobs as finished
-                $this->doFinishedExtraActions($parent);
-            }
-        } else {
-            $this->remove($task);
-        }
-
-        // add Task to the finished list
-        $this->client->lpush(self::PREFIX.'task:finished', $task->getId());
-
-        // send notification
-        if ($this->getMailer() && $notification = $task->getNotification()) {
-            $notification->setMailer($this->getMailer());
-            $notification->sendNotification(Notification::TYPE_SUCCESS);
-
-            $this->log('A success notification has been sent.');
-        }
-
-        return null;
-    }
-
-    /**
      * Increment the count of finished children of a Task
-     * 
+     *
      * @param   \Libcast\JobQueue\Task\Task $task
      * @throws  \Libcast\JobQueue\Exception\QueueException
      */
@@ -315,7 +341,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
     /**
      * Check if all the children of a Task are finished
-     * 
+     *
      * @param   \Libcast\JobQueue\Task\Task $task
      * @return  int
      * @throws  \Libcast\JobQueue\Exception\QueueException
@@ -364,16 +390,16 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         $task->setStatus(Task::STATUS_PENDING);
         $task->setScheduledAt(date('Y-m-d H:i:s', $date));
 
-        // remove Task from Queue
-        $this->remove($task);
+        // remove Task from Queue but keep failed count
+        $this->remove($task, true, false);
 
         $pipe = $this->client->pipeline();
 
         // store Task data in a dedicated key
-        $pipe->set(self::PREFIX."task:scheduled:{$task->getId()}", $task->jsonExport());
+        $pipe->set(self::PREFIX."task:scheduled:$task", $task->jsonExport());
 
         // add Task to sheduled set with time as score
-        $pipe->zadd(self::PREFIX.'task:scheduled', 
+        $pipe->zadd(self::PREFIX.'task:scheduled',
                 $task->getScheduledAt(false),
                 $task->getId());
 
@@ -414,6 +440,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
      */
     public function getTasks($sort_by = null, $sort_order = null, $priority = null, $profile = null, $status = null)
     {
+        // check for scheduled Tasks that needs to be enqueued
+        $this->unscheduleMatureTasks();
+
         if (!$sort_by) {
             $sort_by = self::SORT_BY_PRIORITY;
         }
@@ -446,9 +475,9 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         if (Task::STATUS_PENDING === $status || !$status) {
             foreach ($this->client->zrange(self::PREFIX.'task:scheduled', 0, -1) as $id) {
                 $task = $this->getTask($id);
-                if ($task 
-                        && (self::COMMON_PROFILE === $profile || $profile === $task->getOption('profile')) 
-                        && (!$priority || $priority === $task->getOption('priority')) 
+                if ($task
+                        && (self::COMMON_PROFILE === $profile || $profile === $task->getOption('profile'))
+                        && (!$priority || $priority === $task->getOption('priority'))
                         && (!$status || $status === $task->getStatus())) {
                     $tasks[] = $task;
                 }
@@ -459,8 +488,8 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         if (Task::STATUS_WAITING === $status || !$status) {
             $key = self::PREFIX.'profile:'.($profile ? $profile : self::COMMON_PROFILE);
 
-            foreach ($this->client->zrevrangebyscore($key, 
-                    $priority ? '('.($priority + 1) : '+inf', 
+            foreach ($this->client->zrevrangebyscore($key,
+                    $priority ? '('.($priority + 1) : '+inf',
                     $priority ? $priority : self::PRIORITY_MIN) as $id) {
                 $task = $this->getTask($id);
                 if ($task && (!$status || $status === $task->getStatus())) {
@@ -472,7 +501,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         // Queue stores running and successfull Tasks the same way until Task is
         // finished. Failed Tasks are immediately requeued or remain untouched.
         if (!$status || in_array($status, array(
-            Task::STATUS_RUNNING, 
+            Task::STATUS_RUNNING,
             Task::STATUS_SUCCESS,
             Task::STATUS_FAILED,
         ))) {
@@ -480,15 +509,15 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
             foreach ($this->client->zrangebyscore($key, -1, '(1') as $id) {
                 $task = $this->getTask($id);
-                if ($task 
-                        && (!$status || $status === $task->getStatus()) 
+                if ($task
+                        && (!$status || $status === $task->getStatus())
                         && (!$priority || $priority === $task->getOption('priority'))) {
                     $tasks[] = $task;
                 }
             }
         }
 
-        // finished Tasks have no data (their ids are just listed) so we have to 
+        // finished Tasks have no data (their ids are just listed) so we have to
         // create fake Tasks based on NullJob
         if (Task::STATUS_FINISHED === $status && self::COMMON_PROFILE === $profile) {
             foreach ($this->client->lrange(self::PREFIX.'task:finished', 0, -1) as $id) {
@@ -513,7 +542,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
                     $sort = $task->getStatus();
                     break;
 
-                case self::SORT_BY_PRIORITY: 
+                case self::SORT_BY_PRIORITY:
                 default :
                     $sort = $task->getOption('priority');
             }
@@ -588,7 +617,7 @@ class RedisQueue extends AbstractQueue implements QueueInterface
     public function getTaskStatus($id)
     {
         if ($task = $this->getTask($id)) {
-            // if Task is currently in Queue, check if any child has failed 
+            // if Task is currently in Queue, check if any child has failed
             foreach ($task->getChildren() as $child) {
                 if (Task::STATUS_FAILED === $this->getTaskStatus($child->getId())) {
                     return Task::STATUS_FAILED;
@@ -607,6 +636,8 @@ class RedisQueue extends AbstractQueue implements QueueInterface
      */
     public function getNextTask($profiles = null)
     {
+        $task = null;
+
         // check for scheduled Tasks that needs to be enqueued
         $this->unscheduleMatureTasks();
 
@@ -641,8 +672,8 @@ class RedisQueue extends AbstractQueue implements QueueInterface
                 call_user_func_array(
                         array($this->client, 'zunionstore'),
                         array_merge(
-                                array($key, count($keys)), 
-                                $keys, 
+                                array($key, count($keys)),
+                                $keys,
                                 array(array('AGGREGATE MAX'))));
 
                 break;
@@ -665,32 +696,36 @@ class RedisQueue extends AbstractQueue implements QueueInterface
         }
 
         // get all non reserved Tasks ordered by priority
-        if (count($tasks_ids = $this->client->zrevrangebyscore($key, '+inf', self::PRIORITY_MIN))) {
+        $tasks_ids = $this->client->zrevrangebyscore($key, '+inf', self::PRIORITY_MIN);
+        if (count($tasks_ids) > 0) {
             /* @hack to fix FIFO order */
             // reduce Tasts set to those of highest priority
             $next_priority_id   = reset($tasks_ids);
             $next_priority      = $this->client->zscore($key, $next_priority_id);
-            $priority_task_ids  = $this->client->zrevrangebyscore($key, 
-                    $next_priority, 
+            $priority_task_ids  = $this->client->zrevrangebyscore($key,
+                    $next_priority,
                     sprintf('(%d', $next_priority - 1));
 
             // sort ids in ASC order to respect FIFO rule
             sort($priority_task_ids);
 
-            $next_id = reset($priority_task_ids);
+            // find a valid Task
+            foreach ($priority_task_ids as $task_id) {
+                try {
+                    $task = Task::jsonImport($this->client->get(self::PREFIX."task:$task_id"));
+                    break;
+                } catch (Exception $e) {
+                    continue;
+                }
+            }
         }
 
-        // delete temporary keys 
+        // delete temporary keys
         if ($delete_key) {
             $this->client->del($key);
         }
 
-        // empty Queue
-        if (!isset($next_id) || !$next_id) {
-            return null;
-        }
-
-        return Task::jsonImport($this->client->get(self::PREFIX."task:$next_id"));
+        return $task;
     }
 
     /**

@@ -5,7 +5,7 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
@@ -59,7 +59,7 @@ class Worker implements WorkerInterface
      * Setup a Worker to connect the Queue.
      * The Worker will receive Tasks from Queue profiled sets.
      * Each Task will setup a Job that can be run (executed).
-     * 
+     *
      * @param string                                  $name     Name of the Worker
      * @param \Libcast\JobQueue\Queue\QueueInterface  $queue    Queue instance
      * @param array                                   $profiles Profiles names (sets of Tasks)
@@ -84,7 +84,7 @@ class Worker implements WorkerInterface
 
     /**
      * Set a name used by logger to track this Worker activity
-     * 
+     *
      * @param string $name
      */
     protected function setName($name)
@@ -93,7 +93,7 @@ class Worker implements WorkerInterface
     }
 
     /**
-     * 
+     *
      * @return string
      */
     protected function getName()
@@ -102,7 +102,7 @@ class Worker implements WorkerInterface
     }
 
     /**
-     * 
+     *
      * @param string $status busy|paused
      */
     protected function setStatus($status)
@@ -115,7 +115,7 @@ class Worker implements WorkerInterface
     }
 
     /**
-     * 
+     *
      * @return string busy|paused
      */
     protected function getStatus()
@@ -124,7 +124,7 @@ class Worker implements WorkerInterface
     }
 
     /**
-     * 
+     *
      * @param \Libcast\JobQueue\Queue\QueueInterface $queue
      */
     protected function setQueue(QueueInterface $queue)
@@ -133,8 +133,8 @@ class Worker implements WorkerInterface
     }
 
     /**
-     * 
-     * @return \Libcast\JobQueue\Queue\QueueInterface 
+     *
+     * @return \Libcast\JobQueue\Queue\QueueInterface
      */
     protected function getQueue()
     {
@@ -143,7 +143,7 @@ class Worker implements WorkerInterface
 
     /**
      * Set profiles handled by this Worker
-     * 
+     *
      * @param array $profiles Array of profile names
      */
     protected function setProfiles($profiles)
@@ -152,7 +152,7 @@ class Worker implements WorkerInterface
     }
 
     /**
-     * 
+     *
      * @return array
      */
     protected function getProfiles()
@@ -169,7 +169,7 @@ class Worker implements WorkerInterface
     }
 
     /**
-     * @return \Psr\Log\LoggerInterface 
+     * @return \Psr\Log\LoggerInterface
      */
     protected function getLogger()
     {
@@ -188,15 +188,16 @@ class Worker implements WorkerInterface
 
         try {
             $queue = $this->getQueue();
+            /* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
 
-            $this->log(sprintf('Worker \'%s\' start taking Tasks from Queue with %s profile%s.', 
+            $this->log(sprintf('Worker \'%s\' start taking Tasks from Queue with %s profile%s.',
                     $this->getName(),
                     implode(', ', $this->getProfiles()),
                     count($this->getProfiles()) > 1 ? 's' : ''));
 
             while (true) {
                 while ($task = $queue->getNextTask($this->getProfiles())) {
-                    /* @var $task \Libcast\JobQueue\Task\TaskInterface */
+                    /* @var $task \Libcast\JobQueue\Task\Task */
 
                     $this->setStatus(self::STATUS_BUSY);
 
@@ -225,7 +226,7 @@ class Worker implements WorkerInterface
                             $task->setStatus(Task::STATUS_SUCCESS);
                             $queue->update($task);
 
-                            // try to enqueue child Tasks, 
+                            // try to enqueue child Tasks,
                             $finished = true;
                             foreach ($task->getChildren() as $child) {
                                 /* @var $child \Libcast\JobQueue\Task\Task */
@@ -323,10 +324,10 @@ class Worker implements WorkerInterface
         // send errors to logger if exists
         set_error_handler(
             function (
-                $code, 
-                $message, 
-                $file, 
-                $line, 
+                $code,
+                $message,
+                $file,
+                $line,
                 $context
             ) use ($logger) {
                 if ($logger) {
@@ -357,7 +358,7 @@ class Worker implements WorkerInterface
 
     /**
      * Log message only if a logger has been set
-     * 
+     *
      * @param   string  $message
      * @param   array   $context
      * @param   string  $level    debug|info|notice|warning|error|critical|alert
