@@ -127,11 +127,14 @@ class UpstartCommand extends Command
 
     protected function ping($worker)
     {
-        $process = new Process("pgrep -c -f {$this->getUpstartName($worker)}");
+        $process = new Process("service {$this->getUpstartName($worker)} status");
         $process->run();
         if (!$process->isSuccessful()) {
             throw new CommandException($process->getErrorOutput());
         }
-        return $process->getOutput() < 2 ? false : true;
+
+        return (bool) preg_match("|{$this->getUpstartName($worker)} start/running, process ([0-9]+)|", $process->getOutput())
+                ? true
+                : false;
     }
 }

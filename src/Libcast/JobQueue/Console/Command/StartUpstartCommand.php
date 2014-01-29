@@ -30,10 +30,16 @@ class StartUpstartCommand extends UpstartCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $workers = $this->getWorkerList($input);
-        foreach ($workers as $name) {
-            $this->jobQueue['queue']->reboot($this->jobQueue['workers'][$name]);
-            if (!$this->ping($name)) {
-                $process = $this->start($name);
+        if (empty($workers)) {
+            $output->writeln("There is no running worker.");
+        }
+
+        foreach ($workers as $worker) {
+            $this->jobQueue['queue']->reboot($this->jobQueue['workers'][$worker]);
+            if ($this->ping($worker)) {
+                $this->addLine("Worker $worker has already been started.");
+            } else {
+                $process = $this->start($worker);
                 $this->finishProcess($process, $output);
             }
         }

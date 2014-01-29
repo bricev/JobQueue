@@ -34,13 +34,13 @@ class StopUpstartCommand extends UpstartCommand
             $output->writeln("There is no running worker.");
         }
 
-        foreach ($workers as $name) {
-            if ($this->ping($name)) {
-                $process = $this->stop($name);
+        foreach ($workers as $worker) {
+            if ($this->ping($worker)) {
+                $process = $this->stop($worker);
                 $this->finishProcess($process, $output);
-                $this->addLine("Worker $name stopped.");
+                $this->addLine("Worker $worker stopped.");
             } else {
-                $this->addLine("Worker $name not found or not started yet.");
+                $this->addLine("Worker $worker not found or not started yet.");
             }
         }
 
