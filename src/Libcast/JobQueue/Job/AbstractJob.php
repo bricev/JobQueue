@@ -54,11 +54,17 @@ abstract class AbstractJob implements JobInterface
     protected $parameters = array();
 
     /**
+     *
+     * @var bool
+     */
+    protected $force_stop = false;
+
+    /**
      * @var array
      */
     protected $required_parameters = array();
 
-    function __construct()
+    public function __construct()
     {
         $this->initialize();
     }
@@ -273,6 +279,24 @@ abstract class AbstractJob implements JobInterface
     }
 
     /**
+     *
+     * @return bool
+     */
+    public function isStopped()
+    {
+        return $this->force_stop;
+    }
+
+    /**
+     *
+     * @return bool true
+     */
+    public function forceStop()
+    {
+        return $this->force_stop = true;
+    }
+
+    /**
      * Executed before Task work
      * Exemple of use:
      * - test that a file exists
@@ -317,16 +341,20 @@ abstract class AbstractJob implements JobInterface
         }
 
         switch (true) {
-            case !$this->preRun():
+            case !$this->preRun() || $this->isStopped():
                 $type = 'pre';
                 // no break
 
-            case !$this->run():
+            case !$this->run() || $this->isStopped():
                 $type = isset($type) ? $type : 'main';
                 // no break
 
-            case !$this->postRun():
+            case !$this->postRun() || $this->isStopped():
                 $type = isset($type) ? $type : 'post';
+
+                if ($this->isStopped()) {
+                    break; // if Job has been stopped manually, dont throw exception
+                }
 
                 throw new JobException("Running the $type Job failed.");
         }
