@@ -38,7 +38,7 @@ class Application extends BaseApplication
      *
      * @api
      */
-    function __construct()
+    public function __construct()
     {
         parent::__construct('Libcast Job Queue CLI', JobQueue::VERSION);
         $this->add(new AddTaskCommand);

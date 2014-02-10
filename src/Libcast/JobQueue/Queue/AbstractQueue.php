@@ -5,7 +5,7 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
@@ -47,13 +47,13 @@ abstract class AbstractQueue implements QueueInterface
     protected $mailer;
 
     /**
-     * 
+     *
      * @param   object                    $client DB client (eg. \Predis\Client)
-     * @param   \Psr\Log\LoggerInterface  $logger 
+     * @param   \Psr\Log\LoggerInterface  $logger
      * @param   \Swift_Mailer             $mailer For Notification sending
      * @throws  \Libcast\JobQueue\Exception\QueueException
      */
-    function __construct($client, LoggerInterface $logger = null, \Swift_Mailer $mailer = null)
+    public function __construct($client, LoggerInterface $logger = null, \Swift_Mailer $mailer = null)
     {
         if (!$client) {
             throw new QueueException('Please provide a valid client.');
@@ -72,7 +72,7 @@ abstract class AbstractQueue implements QueueInterface
 
     /**
      * List of options to sort Tasks by
-     * 
+     *
      * @return array
      */
     public static function getSortByOptions()
@@ -85,7 +85,7 @@ abstract class AbstractQueue implements QueueInterface
     }
 
     /**
-     * 
+     *
      * @param \Psr\Log\LoggerInterface
      */
     public function setLogger(LoggerInterface $logger)
@@ -94,8 +94,8 @@ abstract class AbstractQueue implements QueueInterface
     }
 
     /**
-     * 
-     * @return \Psr\Log\LoggerInterface 
+     *
+     * @return \Psr\Log\LoggerInterface
      */
     protected function getLogger()
     {
@@ -103,7 +103,7 @@ abstract class AbstractQueue implements QueueInterface
     }
 
     /**
-     * 
+     *
      * @param \Swift_Mailer $mailer
      */
     protected function setMailer(\Swift_Mailer $mailer)
@@ -112,7 +112,7 @@ abstract class AbstractQueue implements QueueInterface
     }
 
     /**
-     * 
+     *
      * @return \Swift_Mailer
      */
     protected function getMailer()
@@ -122,7 +122,7 @@ abstract class AbstractQueue implements QueueInterface
 
     /**
      * Log message only if a logger has been set
-     * 
+     *
      * @param   string  $message
      * @param   array   $contaxt
      * @param   string  $level    info|warning|error|debug

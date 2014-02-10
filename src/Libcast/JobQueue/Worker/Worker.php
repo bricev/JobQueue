@@ -65,7 +65,7 @@ class Worker implements WorkerInterface
      * @param array                                   $profiles Profiles names (sets of Tasks)
      * @param \Psr\Log\LoggerInterface                $logger   Implementation of Psr\Log interface
      */
-    function __construct($name, QueueInterface $queue, $profiles = array(), LoggerInterface $logger = null)
+    public function __construct($name, QueueInterface $queue, $profiles = array(), LoggerInterface $logger = null)
     {
         $this->setName($name);
 

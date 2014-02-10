@@ -5,7 +5,7 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
@@ -115,20 +115,20 @@ class Task implements TaskInterface
 
     /**
      * Create a new Task
-     * 
+     *
      * Some options are required:
      * - priority : from 1 (lower) to infinite (higher)
      * - set      : any set name registred from Queue configuration
-     * 
+     *
      * Required parameters may be required depending on the Job associated
      * with this Task
-     * 
+     *
      * @param \Libcast\JobQueue\Job\JobInterface  $job          Affect a job to the task
      * @param array                               $options      Task options
      * @param array                               $parameters   Task parameters
      * @param Notification                        $notification Notification for succes and or alert
      */
-    function __construct(JobInterface $job, $options = array(), $parameters = array(), Notification $notification = null)
+    public function __construct(JobInterface $job, $options = array(), $parameters = array(), Notification $notification = null)
     {
         $this->setJob($job);
 
@@ -228,7 +228,7 @@ class Task implements TaskInterface
     }
 
     /**
-     * 
+     *
      * @return \Libcast\JobQueue\Job\JobInterface $job
      */
     public function getJob()
@@ -306,11 +306,11 @@ class Task implements TaskInterface
     }
 
     /**
-     * 
+     *
      * @param float $float
-     * @param bool  $percentage 
+     * @param bool  $percentage
      * @param bool  $absolute_value
-     * @param int   $task_count 
+     * @param int   $task_count
      */
     protected function formatProgress($float, $human_readable, $absolute_value, $task_count = 1)
     {
@@ -328,7 +328,7 @@ class Task implements TaskInterface
     }
 
     /**
-     * 
+     *
      * @param string $string A valid date format (Eg. '2013-11-30 20:30:50')
      * @throws \Libcast\JobQueue\Exception\TaskException
      */
@@ -380,7 +380,7 @@ class Task implements TaskInterface
     }
 
     /**
-     * 
+     *
      * @param array $options
      */
     protected function setOptions($options)
@@ -413,7 +413,7 @@ class Task implements TaskInterface
     }
 
     /**
-     * 
+     *
      * @param array $parameters
      */
     protected function setParameters($parameters)
@@ -563,13 +563,13 @@ class Task implements TaskInterface
             return null;
         }
 
-        $notification = isset($data['notification']) && $data['notification'] ? 
-                unserialize($data['notification']) : 
+        $notification = isset($data['notification']) && $data['notification'] ?
+                unserialize($data['notification']) :
                 null;
 
-        $task = new Task(new $data['job'], 
-                $data['options'], 
-                $data['parameters'], 
+        $task = new Task(new $data['job'],
+                $data['options'],
+                $data['parameters'],
                 $notification instanceof Notification ? $notification : null);
 
         $task->setId($data['id']);

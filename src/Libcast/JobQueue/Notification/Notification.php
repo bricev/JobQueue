@@ -5,7 +5,7 @@
  *
  * (c) Brice Vercoustre <brcvrcstr@gmail.com>
  *
- * For the full copyright and license information, please view the LICENSE file 
+ * For the full copyright and license information, please view the LICENSE file
  * that was distributed with this source code.
  */
 
@@ -30,7 +30,7 @@ class Notification implements \Serializable
     protected $notifications = array();
 
     /**
-     * 
+     *
      * @return array
      */
     public static function getTypes()
@@ -42,10 +42,10 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @param \Swift_Mailer $mailer
      */
-    function __construct(\Swift_Mailer $mailer = null)
+    public function __construct(\Swift_Mailer $mailer = null)
     {
         if ($mailer) {
             $this->setMailer($mailer);
@@ -53,7 +53,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @param \Swift_Mailer $mailer
      */
     public function setMailer(\Swift_Mailer $mailer)
@@ -62,7 +62,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @return \Swift_Mailer
      */
     protected function getMailer()
@@ -71,7 +71,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @param   \Swift_Message  $message
      * @param   string          $type     alert|success
      * @throws  \Libcast\JobQueue\Exception\NotificationException
@@ -86,7 +86,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @param   mixed   $type   alert|success|null
      * @return  mixed           array|\Swift_Message
      * @throws  \Libcast\JobQueue\Exception\NotificationException
@@ -105,7 +105,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @return  \Swift_Message
      * @throws  \Libcast\JobQueue\Exception\NotificationException
      */
@@ -115,7 +115,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @return  \Swift_Message
      * @throws  \Libcast\JobQueue\Exception\NotificationException
      */
@@ -125,7 +125,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @param string $type alert|success
      * @throws \Libcast\JobQueue\Exception\NotificationException
      */
@@ -143,7 +143,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @see http://www.php.net/manual/en/serializable.serialize.php
      */
     public function serialize()
@@ -168,7 +168,7 @@ class Notification implements \Serializable
     }
 
     /**
-     * 
+     *
      * @see http://www.php.net/manual/en/serializable.unserialize.php
      */
     public function unserialize($serialized)
