@@ -27,7 +27,7 @@ class Command extends BaseCommand
     protected function configure()
     {
         $this->getDefinition()->addArgument(
-            new InputArgument('config', InputArgument::REQUIRED, 'The configuration')
+            new InputArgument('config', InputArgument::OPTIONAL, 'The configuration')
         );
     }
 
@@ -45,12 +45,15 @@ class Command extends BaseCommand
         $this->output = $output;
 
         $config = $input->getArgument('config');
+        if (is_null($config)) {
+            $config = getcwd() . '/config/jobqueue.php';
+        }
         $filesystem = new Filesystem();
 
         if (!$filesystem->isAbsolutePath($config)) {
             $config = getcwd().'/'.$config;
         }
-
+        // die(getcwd());
         if (!is_file($config)) {
             throw new \InvalidArgumentException(sprintf('Configuration file "%s" does not exist.', $config));
         }
