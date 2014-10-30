@@ -2,7 +2,7 @@
     "name": "libcast/jobqueue",
     "type": "library",
     "description": "Job/Queue system that execute Tasks through Workers",
-    "homepage": "   ",
+    "homepage": "https://github.com/bricev/JobQueue",
     "license": "MIT",
     "require": {
         "php": ">=5.3.0",
