@@ -1,5 +1,5 @@
-/vendor/
-/example/log/
-/log/
+/.idea
+/vendor
+/example/log
+/log
 /composer.phar
-/composer.lock
