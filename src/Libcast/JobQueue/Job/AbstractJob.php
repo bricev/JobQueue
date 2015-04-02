@@ -134,11 +134,13 @@ abstract class AbstractJob implements JobInterface
 
     protected function setParameters($parameters)
     {
+        $parameters = array_merge($this->parameters, (array) $parameters);
+
         // check if all required parameters have been registred
         // will throw an exception if any parameter is messing
         $this->validateArguments($parameters, $this->required_parameters, 'parameter');
 
-        $this->parameters = array_merge($this->parameters, (array) $parameters);
+        $this->parameters = $parameters;
     }
 
     /**
