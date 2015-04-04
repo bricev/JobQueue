@@ -16,16 +16,12 @@ Vocabulary:
 
   * **Job** define the work
 
-  * **Task** register all options and params to run Jobs, set priority and
-    profile, track progress
+  * **Task** register all options and params to run Jobs, set profile, and
+    track progress
 
   * **Queue** store and manage Tasks, provide Tasks for Workers
 
-  * **Worker** takes Tasks from Queue to setup Jobs and execute them, respect
-    priority order
-
-  * **priority** from 1 (lesser) to +inf, sets the order in which Tasks are
-    submitted to Workers
+  * **Worker** takes Tasks from Queue to setup Jobs and execute them
 
   * **profile** affected to Tasks, Workers are then set up to only take Tasks
     having certain profiles
@@ -52,26 +48,26 @@ Write a Job
 
 Jobs are simple class that must extend the `AbstractJob` parent class.
 
-Jobs must be setup through an `inithialize()` method that must at least provide
-a name and may add some Job default options and parameters, or set some required
-options and parameters.
+Jobs must be setup through a `setup()` method that must at least provide
+a name and may add some Job required parameters and settings, and pre
+execute routines.
 
 See example/Job to view a Job example.
 
-Usefull methods:
+Useful methods:
 
-  * `$this->getOption($name)`        retrieve an option by its name
+  * `$this->hasParameter($name)`            check if a parameter exists
 
-  * `$this->getParameter($name)`     retrieve a parameter by its name
+  * `$this->getParameter($name, $default)`  retrieve a parameter by its name
 
-  * `$this->setTaskProgress($float)` to track Job progress while running
+  * `$this->setTaskProgress($float)`        to track Job progress while running
 
 
 Add Tasks to Queue
 ------------------
 
 Here is an example of how you create and add Tasks to Queue (you can also look
-at the `job:add-dummy` command):
+at the `task:import` command):
 
 ```php
 <?php
@@ -83,22 +79,22 @@ use Libcast\JobQueue\Queue\QueueFactory;
 use Predis\Client;
 
 $task = new Task(
-        new DummyJob,
-        array(),
-        array(
-            'input'       => 'aaaaaa',
-            'destination' => '/tmp/file',
-        )
+    new Libcast\JobQueue\Test\DummyJob,
+    'dummy',
+    [
+        'param1' => 'foo',
+        'param2' => 'bar',
+    ]
 );
 
 // setup a Redis client
 $redis = new Client('tcp://localhost:6379');
 
 // load Queue
-$queue = QueueFactory::load($redis);
+$queue = QueueFactory::build($redis);
 
-// add all Tasks to Queue
-$queue->add($task);
+// add Tasks to the Queue
+$queue->enqueue($task);
 ```
 
 
@@ -108,9 +104,9 @@ CLI
 ### Synopsis
 
     queue
-      queue:flush       Flush the queue
-      queue:reboot      Reboot the queue
       queue:show        List jobs from the queue
+      queue:flush       Flush the queue
+      queue:recover     Move all buggy Tasks to the `waiting` list
     task
       task:add          Add a Task
       task:delete       Delete a Task
@@ -121,11 +117,5 @@ CLI
 A typical command would look like:
 
     bin/jobqueue queue:show example/config.php
-    bin/jobqueue worker:run w1 example/config.php
-    bin/jobqueue upstart:control status example/config.php
+    bin/jobqueue worker:run profile example/config.php
 
-
-You can also deploy a worker as an upstart service (in `/etc/init/`).
-
-    # Ubuntu
-    sudo bin/jobqueue upstart:install example/config.php
