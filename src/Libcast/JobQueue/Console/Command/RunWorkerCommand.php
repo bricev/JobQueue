@@ -14,8 +14,7 @@ namespace Libcast\JobQueue\Console\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Libcast\JobQueue\Console\Command\Command;
-use Libcast\JobQueue\Worker\Worker;
+use Libcast\JobQueue\Worker;
 
 class RunWorkerCommand extends Command
 {
@@ -24,19 +23,25 @@ class RunWorkerCommand extends Command
         $this
             ->setName('worker:run')
             ->setDescription('Run a worker')
-            ->addArgument('worker', InputArgument::REQUIRED)
+            ->addArgument('profile', InputArgument::REQUIRED)
         ;
         parent::configure();
     }
 
+    /**
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $worker = new Worker(
-            $input->getArgument('worker'),
-            $this->jobQueue['queue'],
-            $this->jobQueue['workers'][$input->getArgument('worker')],
-            $this->jobQueue['logger']
+            $input->getArgument('profile'),
+            $this->getQueue(),
+            $this->getLogger()
         );
+
         $worker->run();
     }
 }

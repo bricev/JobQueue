@@ -115,12 +115,6 @@ CLI
       task:add          Add a Task
       task:delete       Delete a Task
       task:edit         Edit a Task
-    upstart
-      upstart:info      Give info and status for workers
-      upstart:install   Install workers' conf in /etc/init/
-      upstart:start     Proxy task to start workers via upstart
-      upstart:status    Proxy task to get workers' status via upstart
-      upstart:stop      Proxy task to stop workers via upstart
     worker
       worker:run        Run a worker
 

@@ -31,9 +31,22 @@ class Command extends BaseCommand
         );
     }
 
+    /**
+     *
+     * @return \Libcast\JobQueue\Queue\QueueInterface
+     */
     protected function getQueue()
     {
         return $this->jobQueue['queue'];
+    }
+
+    /**
+     *
+     * @return \Psr\Log\LoggerInterface
+     */
+    protected function getLogger()
+    {
+        return $this->jobQueue['logger'];
     }
 
     /**
