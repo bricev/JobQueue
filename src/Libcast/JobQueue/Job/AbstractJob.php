@@ -45,7 +45,7 @@ abstract class AbstractJob
     protected $queue;
 
     /**
-     * @var \Libcast\JobQueue\Task\Task
+     * @var \Libcast\JobQueue\Task
      */
     protected $task;
 
