@@ -14,7 +14,6 @@ namespace Libcast\JobQueue\Console\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Libcast\JobQueue\Console\Command\Command;
 
 class DeleteTaskCommand extends Command
 {
@@ -31,11 +30,13 @@ class DeleteTaskCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $task = $this->jobQueue['queue']->getTask($input->getArgument('id'));
+        $queue = $this->getQueue();
+        
+        $task = $queue->getTask($input->getArgument('id'));
 
-        $this->jobQueue['queue']->remove($task);
+        $queue->delete($task);
 
-        $this->addLine("Task $task has been removed from Queue.");
+        $this->addLine("Task $task has been deleted from the Queue.");
 
         $output->writeln($this->getLines());
     }

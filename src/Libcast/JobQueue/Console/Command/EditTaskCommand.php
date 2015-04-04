@@ -15,10 +15,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Libcast\JobQueue\Exception\CommandException;
-use Libcast\JobQueue\Console\Command\Command;
 use Libcast\JobQueue\Console\OutputTable;
-use Libcast\JobQueue\Task\Task;
 
 class EditTaskCommand extends Command
 {
@@ -27,25 +24,27 @@ class EditTaskCommand extends Command
         $this
             ->setName('task:edit')
             ->setDescription('Edit a Task')
-            ->addArgument('id',             InputArgument::REQUIRED,     'Task Id')
-            ->addOption('parent-id',  'i',  InputOption::VALUE_OPTIONAL, 'Set parent Id (Eg. 123)', null)
-            ->addOption('priority',   'p',  InputOption::VALUE_OPTIONAL, 'Set priority (1, 2, ...)', null)
-            ->addOption('profile',    'f',  InputOption::VALUE_OPTIONAL, 'Set profile (eg. "high-cpu")', null)
-            ->addOption('status',     's',  InputOption::VALUE_OPTIONAL, 'Set status (pending|waiting|running|success|failed|finished)', null)
+            ->addArgument('id',           InputArgument::REQUIRED,     'Task Id')
+            ->addOption('parent-id', 'i', InputOption::VALUE_OPTIONAL, 'Set parent Id (Eg. 123)', null)
+            ->addOption('profile',   'p', InputOption::VALUE_OPTIONAL, 'Set profile (eg. "high-cpu")', null)
+            ->addOption('status',    's', InputOption::VALUE_OPTIONAL, 'Set status (pending|waiting|running|success|failed|finished)', null)
         ;
 
         parent::configure();
     }
 
+    /**
+     *
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     * @throws \Libcast\JobQueue\Exception\CommandException
+     * @throws \Libcast\JobQueue\Exception\TaskException
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $queue = $this->getQueue();
-
         $task = $queue->getTask($input->getArgument('id'));
-
-        if (in_array($task->getStatus(), Task::getFakeTaskStatuses())) {
-            throw new CommandException('This Task can\'t be updated.');
-        }
 
         $update = false;
 
@@ -54,17 +53,8 @@ class EditTaskCommand extends Command
             $update = true;
         }
 
-        if ($input->getOption('priority')) {
-            $task->setOptions(array_merge($task->getOptions(), array(
-                'priority' => (int) $input->getOption('priority'),
-            )));
-            $update = true;
-        }
-
         if ($input->getOption('profile')) {
-            $task->setOptions(array_merge($task->getOptions(), array(
-                'profile' => $input->getOption('profile'),
-            )));
+            $task->setProfile($input->getOption('profile'));
             $update = true;
         }
 
@@ -84,55 +74,53 @@ class EditTaskCommand extends Command
         $table->addColumn('Key',    15, OutputTable::RIGHT);
         $table->addColumn('Value',  25, OutputTable::LEFT);
 
-        $table->addRow(array(
+        $table->addRow([
             'Key'   => 'Id',
             'Value' => $task->getId(),
-        ));
-        $table->addRow(array(
+        ]);
+
+        $table->addRow([
             'Key'   => 'Parent Id',
             'Value' => $task->getParentId(),
-        ));
-        $table->addRow(array(
+        ]);
+
+        if ($count = $task->countChildren()) {
+            $table->addRow([
+                'Key'   => 'Children',
+                'Value' => $count,
+            ]);
+        }
+
+        $table->addRow([
             'Key'   => 'Created at',
-            'Value' => $task->getCreatedAt(),
-        ));
-        $table->addRow(array(
-            'Key'   => 'Scheduled at',
-            'Value' => $task->getScheduledAt(),
-        ));
-        $table->addRow(array(
+            'Value' => $task->getCreatedAt('r'),
+        ]);
+
+        $table->addRow([
             'Key'   => 'Job',
-            'Value' => $task->getJob()->getClassName(),
-        ));
-        $table->addRow(array(
+            'Value' => (string) $task->getJob(),
+        ]);
+
+        $table->addRow([
+            'Key'   => 'Profile',
+            'Value' => $task->getProfile(),
+        ]);
+
+        $table->addRow([
             'Key'   => 'Status',
             'Value' => $task->getStatus(),
-        ));
-        $table->addRow(array(
+        ]);
+
+        $table->addRow([
             'Key'   => 'Progress',
-            'Value' => $task->getProgress(true),
-        ));
+            'Value' => $queue->getProgress($task),
+        ]);
 
-        if ($notification = $task->getNotification()) {
-            $emails = array_keys((array) $notification->getSuccessNotification()->getTo());
-            $table->addRow(array(
-                'Key'   => 'Notification',
-                'Value' => implode(', ', $emails),
-            ));
-        }
-
-        foreach ($task->getOptions() as $k => $v) {
-            $table->addRow(array(
-                'Key'   => ucfirst($k),
-                'Value' => $v,
-            ));
-        }
-
-        foreach ($task->getParameters() as $k => $v) {
-            $table->addRow(array(
-                'Key'   => ucfirst($k),
-                'Value' => $v,
-            ));
+        foreach ($task->getParameters() as $key => $value) {
+            $table->addRow([
+                'Key'   => ucfirst($key),
+                'Value' => $value,
+            ]);
         }
 
         $this->addLine($header);

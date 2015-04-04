@@ -12,20 +12,10 @@
 namespace Libcast\JobQueue\Job;
 
 use Libcast\JobQueue\Exception\JobException;
-use Libcast\JobQueue\Job\AbstractJob;
-use Libcast\JobQueue\Job\JobInterface;
 
 class NullJob extends AbstractJob implements JobInterface
 {
-    protected function initialize()
-    {
-        $this->setOptions(array(
-            'priority'  => 0,
-            'profile'   => 0,
-        ));
-    }
-
-    protected function run()
+    public function perform()
     {
         throw new JobException('This Job is not meant to be executed.');
     }

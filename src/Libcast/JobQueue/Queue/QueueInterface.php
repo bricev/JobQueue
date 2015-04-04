@@ -11,112 +11,79 @@
 
 namespace Libcast\JobQueue\Queue;
 
-use Libcast\JobQueue\Task\TaskInterface;
+use Libcast\JobQueue\Task;
 
 interface QueueInterface
 {
     /**
-     * Register the Task, persist Task data
+     * Enqueues a Task into the head of the Queue.
      * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @param bool $first False if Task is added for the nth time
-     * @return int Task identifier
+     * @param \Libcast\JobQueue\Task $task
+     * @return Task
      */
-    public function add(TaskInterface $task, $first = true);
+    public function enqueue(Task $task);
 
     /**
-     * Persist updated Task Data, perform extra actions depending on Task status
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task 
-     * @throws \Libcast\JobQueue\Exception\QueueException
+     * Shifts the Queue to ads the Task at the tail.
+     *
+     * @param \Libcast\JobQueue\Task $task
+     * @return Task
      */
-    public function update(TaskInterface $task);
+    public function shift(Task $task);
 
     /**
-     * Remove Task from Queue
+     * Persist an updated Task Data.
      * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @param boolean $update_parent false to prevent parent from being updated
+     * @param \Libcast\JobQueue\Task $task
      */
-    public function remove(TaskInterface $task, $update_parent = true);
+    public function update(Task $task);
 
     /**
-     * Remove Task from Queue and keep its data to a scheduled Tasks set
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @param timestamp $date
+     * Deletes a Task and its parents.
+     *
+     * @param \Libcast\JobQueue\Task $task
      */
-    public function schedule(TaskInterface $task, $date);
+    public function delete(Task $task);
 
     /**
-     * Move a Task from scheduled set to Queue
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface $task
-     * @param timestamp $date
+     * Fetches a waiting Task from the Queue.
+     *
+     * @param string  $profile
+     * @return Task
      */
-    public function unschedule(TaskInterface $task);
+    public function fetch($profile);
 
     /**
-     * Increment the count of failed attemp for a given Task
-     * 
-     * @param   \Libcast\JobQueue\Task\Task $task
-     * @throws  \Libcast\JobQueue\Exception\QueueException
+     * Flushes the Queue from all of its Tasks
+     *
+     * @return boolean
      */
-    public function incrFailed(TaskInterface $task);
-
-    /**
-     * Get the count of failed attempt for a given Task
-     * 
-     * @param   \Libcast\JobQueue\Task\Task $task
-     * @return  int
-     * @throws  \Libcast\JobQueue\Exception\QueueException
-     */
-    public function countFailed(TaskInterface $task);
-
-    /**
-     * Lists all Tasks from Queue
-     * 
-     * @param   string $sort_by     Sort by option (priority|profile|status)
-     * @param   string $sort_order  Sort order (asc|desc)
-     * @param   string $priority    Filter by priority (1, 2, ...)
-     * @param   string $profile     Filter by profile (eg. "high-cpu")
-     * @param   string $order       Filter by status (all|pending|waiting|running|success|failed|finished)
-     * @return  array               List of Tasks
-     * @throws  QueueException
-     */
-    public function getTasks($sort_by = null, $sort_order = null, $priority = null, $profile = null, $status = null);
+    public function flush();
 
     /**
      * Retrieve a Task from Queue based on its Id.
      * 
      * @param int $id
-     * @return \Libcast\JobQueue\Task\TaskInterface|null
+     * @return \Libcast\JobQueue\Task
      */
     public function getTask($id);
 
     /**
-     * Retrieve a Task status, even for non existsing Tasks or finished Tasks.
-     * 
-     * @param int $id 
-     * @return string pending|wait|running|success|failed|finished
+     * Lists all Tasks from Queue.
+     *
+     * @param   array  $filter_by_profile  Filter by profile (eg. "high-cpu")
+     * @param   array  $filter_by_status   Filter by status (pending|waiting|running|success|failed|finished)
+     * @param   string $sort_by_order      Order (asc|desc)
+     * @return  array                      List of Tasks
      */
-    public function getTaskStatus($id);
+    public function getTasks($filter_by_profile = [], $filter_by_status = [], $sort_by_order = 'asc');
 
     /**
-     * Pick the next Task (ordered by set, priority)
-     * 
-     * @param string $set The set in whick Tasks must be selected
-     * @return \Libcast\JobQueue\Task\TaskInterface|null
+     * Calculate the progress of a Task and its children.
+     *
+     * @param Task $task
+     * @param bool $human_readable
+     * @return float|string
      */
-    public function getNextTask($set = null);
-
-    /**
-     * Requeue all unfinished running Tasks
-     */
-    public function reboot(array $profiles = array());
-
-    /**
-     * Empty Queue (clean all Tasks)
-     */
-    public function flush();
+    public function getProgress(Task $task, $human_readable = true);
 }

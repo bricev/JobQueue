@@ -11,78 +11,34 @@
 
 namespace Libcast\JobQueue\Job;
 
-use Libcast\JobQueue\Queue\QueueInterface;
-use Libcast\JobQueue\Task\TaskInterface;
-use Psr\Log\LoggerInterface;
-
 interface JobInterface
 {
     /**
-     * Get Job's class name
-     * 
-     * @return string
+     * May be used to set up a Job.
+     * This method is called before perform().
+     *
+     * @return boolean
      */
-    public function getClassName();
+    public function setup();
 
     /**
-     * Check if $option exists
-     * 
-     * @param string $option
-     * @return bool
+     * Must be used to perform the actual Job.
+     *
+     * @return boolean
      */
-    public function hasOption($option);
+    public function perform();
 
     /**
-     * 
-     * @return array Options
+     * May be used to perform some clean up.
+     * This method is called after perform().
+     *
+     * @return boolean
      */
-    public function getOptions();
+    public function terminate();
 
     /**
-     * Get a specific option
-     * 
-     * @param   string        $name   Option's name
-     * @return  string|null           Option's value
+     *
+     * @return mixed
      */
-    public function getOption($name);
-
-    /**
-     * Check if $parameter exists
-     * 
-     * @param string $parameter
-     * @return bool
-     */
-    public function hasParameter($parameter);
-
-    /**
-     * 
-     * @return array Parameters
-     */
-    public function getParameters();
-
-    /**
-     * Get a specific parameter
-     * 
-     * @param   string        $name   Parameter's name
-     * @return  string|null           Parameter's value
-     */
-    public function getParameter($name);
-
-    /**
-     * Setup the Job with its Task, the Queue that stores it and an optional
-     * logger
-     * 
-     * @param \Libcast\JobQueue\Task\TaskInterface   $task
-     * @param \Libcast\JobQueue\Queue\QueueInterface $queue
-     * @param \Psr\Log\LoggerInterface          $logger
-     */
-    public function setup(TaskInterface $task, QueueInterface $queue, LoggerInterface $logger = null);
-
-    /**
-     * Executes preRun(), run() & postRun() methods of the Job
-     * Requires to set a Task
-     * 
-     * @throws JobException
-     */
-    public function execute();  
+    public function execute();
 }

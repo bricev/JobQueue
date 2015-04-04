@@ -5,55 +5,18 @@ namespace Libcast\JobQueue\TestJob;
 use Libcast\JobQueue\Job\AbstractJob;
 use Libcast\JobQueue\Job\JobInterface;
 
-/**
- * This is a Job class example.
- * Be sure to extend AbstractJob ans implement JobInterface.
- *
- * Allowed methods :
- *
- *   * initialize() set up the Job
- *     - MAY  call setOptions(array())
- *     - MAY  call setRequiredOptions(array())
- *     - MAY  call setParameters(array())
- *     - MAY  call setRequiredParameters(array())
- *
- *   * preRun() is executed before the Job
- *     - should run parent method at some point
- *
- *   * run() is the actual Job
- *     - should run parent method at some point
- *
- *   * postRun() is executed after the Job
- *     - should run parent method at some point
- */
-
 class DummyJob extends AbstractJob implements JobInterface
 {
-    protected function initialize()
+    public function perform()
     {
-        $this->setOptions(array(
-            'priority'  => 1,
-            'profile'   => 'dummy-stuff',
-        ));
-
-        $this->setRequiredParameters(array(
-            'destination',
-        ));
-    }
-
-    protected function run()
-    {
-        $max = rand(2, 5);
-        for ($i = 1; $i <= $max; $i++) {
-            $time = time();
-
-            exec("echo '$time' >> {$this->getParameter('destination')}");
-
-            $this->setTaskProgress($i/$max);
-
+        // do dummy stuff...
+        $duration = ceil($this->getParameter('duration', 3));
+        for ($i=0; $i<$duration; $i++) {
+            $this->setTaskProgress($i / $duration);
             sleep(1);
         }
 
-        return parent::run();
+
+        return true;
     }
 }

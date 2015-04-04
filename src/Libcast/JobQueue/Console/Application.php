@@ -13,25 +13,11 @@ namespace Libcast\JobQueue\Console;
 
 use Symfony\Component\Console\Application as BaseApplication;
 use Libcast\JobQueue\JobQueue;
-use Libcast\JobQueue\Console\Command\AddTaskCommand;
-use Libcast\JobQueue\Console\Command\DeleteTaskCommand;
-use Libcast\JobQueue\Console\Command\EditTaskCommand;
-use Libcast\JobQueue\Console\Command\ShowQueueCommand;
-use Libcast\JobQueue\Console\Command\FlushQueueCommand;
-use Libcast\JobQueue\Console\Command\RebootQueueCommand;
-use Libcast\JobQueue\Console\Command\InfoUpstartCommand;
-use Libcast\JobQueue\Console\Command\InstallUpstartCommand;
-use Libcast\JobQueue\Console\Command\StartUpstartCommand;
-use Libcast\JobQueue\Console\Command\StatusUpstartCommand;
-use Libcast\JobQueue\Console\Command\StopUpstartCommand;
-use Libcast\JobQueue\Console\Command\RunWorkerCommand;
+use Libcast\JobQueue\Console\Command;
 
 class Application extends BaseApplication
 {
-    protected $parameters;
-
     /**
-     * Constructor.
      *
      * @param \Libcast\JobQueue\Queue\QueueInterface  $queue
      * @param array                                   $parameters
@@ -41,17 +27,19 @@ class Application extends BaseApplication
     public function __construct()
     {
         parent::__construct('Libcast Job Queue CLI', JobQueue::VERSION);
-        $this->add(new AddTaskCommand);
-        $this->add(new DeleteTaskCommand);
-        $this->add(new EditTaskCommand);
-        $this->add(new ShowQueueCommand);
-        $this->add(new FlushQueueCommand);
-        $this->add(new RebootQueueCommand);
-        $this->add(new InfoUpstartCommand);
-        $this->add(new InstallUpstartCommand);
-        $this->add(new StartUpstartCommand);
-        $this->add(new StatusUpstartCommand);
-        $this->add(new StopUpstartCommand);
-        $this->add(new RunWorkerCommand);
+
+        // Task commands
+        $this->add(new Command\AddTaskCommand);
+        $this->add(new Command\ImportTaskCommand);
+        $this->add(new Command\EditTaskCommand);
+        $this->add(new Command\DeleteTaskCommand);
+
+        // Queue commands
+        $this->add(new Command\ShowQueueCommand);
+        $this->add(new Command\FlushQueueCommand);
+        $this->add(new Command\RecoverQueueCommand);
+
+        // Worker commands
+        $this->add(new Command\RunWorkerCommand);
     }
 }

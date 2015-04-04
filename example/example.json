@@ -1,0 +1,77 @@
+[
+    {
+        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+        "profile": "dummy",
+        "parameters": {
+            "name": "A",
+            "duration": 3
+        },
+        "children": [
+            {
+                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                "profile": "dummy",
+                "parameters": {
+                    "name": "A1",
+                    "duration": 6
+                }
+            },
+            {
+                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                "profile": "dummy",
+                "parameters": {
+                    "name": "A2",
+                    "duration": 6
+                },
+                "children": [
+                    {
+                        "job": "\\Libcast\\JobQueue\\TestJob\\DummyFailingJob",
+                        "profile": "dummy",
+                        "parameters": {
+                            "name": "A2-i",
+                            "duration": 2
+                        }
+                    },
+                    {
+                        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                        "profile": "dummy",
+                        "parameters": {
+                            "name": "A2-ii",
+                            "duration": 2
+                        }
+                    },
+                    {
+                        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                        "profile": "dummy",
+                        "parameters": {
+                            "name": "A2-iii",
+                            "duration": 2
+                        }
+                    }
+                ]
+            },
+            {
+                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                "profile": "dummy",
+                "parameters": {
+                    "name": "A3",
+                    "duration": 3
+                }
+            },
+            {
+                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                "profile": "dummy",
+                "parameters": {
+                    "name": "A4",
+                    "duration": 3
+                }
+            }
+        ]
+    },
+    {
+        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+        "profile": "dummy",
+        "parameters": {
+            "name": "B"
+        }
+    }
+]
