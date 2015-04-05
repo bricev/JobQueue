@@ -35,16 +35,12 @@ abstract class AbstractJob
 
     /**
      *
-     * @var array
-     */
-    protected $required_parameters = [];
-
-    /**
      * @var \Libcast\JobQueue\Queue\QueueInterface
      */
     protected $queue;
 
     /**
+     *
      * @var \Libcast\JobQueue\Task
      */
     protected $task;
@@ -91,14 +87,7 @@ abstract class AbstractJob
      */
     protected function setParameters(array $parameters)
     {
-        $parameters = array_merge($this->parameters, $parameters);
-
-        // Checks if all required parameters have been registered
-        if ($missing_parameters = array_diff_key($this->required_parameters, $parameters)) {
-            throw new JobException(sprintf('The following parameters are mandatory: %s', implode(', ', array_keys($missing_parameters))));
-        }
-
-        $this->parameters = $parameters;
+        $this->parameters = array_merge($this->parameters, $parameters);
     }
 
     /**
@@ -124,30 +113,20 @@ abstract class AbstractJob
      *
      * @param $key
      * @param null $default
+     * @param bool $strict
      * @return null
      */
-    protected function getParameter($key, $default = null)
+    protected function getParameter($key, $default = null, $strict = true)
     {
-        return $this->hasParameter($key) ? $this->parameters[$key] : $default;
-    }
+        if ($this->hasParameter($key)) {
+            return $this->parameters[$key];
+        }
 
-    /**
-     *
-     * @param array $parameters
-     */
-    protected function setRequiredParameters(array $parameters)
-    {
-        $this->required_parameters = array_merge($this->required_parameters, $parameters);
-    }
+        if ($strict and is_null($default)) {
+            throw new JobException("Missing '$key' parameter.");
+        }
 
-    /**
-     *
-     * @param $key
-     * @param $value
-     */
-    protected function setRequiredParameter($key, $value)
-    {
-        $this->required_parameters[$key] = $value;
+        return $default;
     }
 
     /**
@@ -173,13 +152,13 @@ abstract class AbstractJob
      * Log message only if a logger has been set
      *
      * @param   string  $message
-     * @param   array   $contaxt
+     * @param   mixed   $context
      * @param   string  $level    info|warning|error|debug
      */
-    protected function log($message, array $context = [], $level = 'info')
+    protected function log($message, $context = [], $level = 'info')
     {
         if ($logger = $this->getLogger()) {
-            $logger->$level($message, $context);
+            $logger->$level($message, (array) $context);
         }
     }
 
