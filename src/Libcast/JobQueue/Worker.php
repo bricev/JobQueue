@@ -221,13 +221,13 @@ class Worker
      * Log message only if a logger has been set
      *
      * @param   string  $message
-     * @param   array   $context
-     * @param   string  $level    debug|info|notice|warning|error|critical|alert
+     * @param   mixed   $context
+     * @param   string  $level    info|warning|error|debug
      */
-    protected function log($message, $context = array(), $level = 'info')
+    protected function log($message, $context = [], $level = 'info')
     {
         if ($logger = $this->getLogger()) {
-            $logger->$level($message, $context);
+            $logger->$level($message, (array) $context);
         }
     }
 
