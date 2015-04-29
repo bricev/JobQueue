@@ -24,12 +24,13 @@ interface QueueInterface
     public function enqueue(Task $task);
 
     /**
-     * Shifts the Queue to ads the Task at the tail.
+     * Shifts the Task at a position in Queue.
      *
-     * @param \Libcast\JobQueue\Task $task
-     * @return Task
+     * @param Task $task
+     * @param null $position
+     * @return mixed
      */
-    public function shift(Task $task);
+    public function shift(Task $task, $position = null);
 
     /**
      * Persist an updated Task Data.

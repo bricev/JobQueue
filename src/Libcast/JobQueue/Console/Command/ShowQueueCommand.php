@@ -89,10 +89,11 @@ class ShowQueueCommand extends Command
             $table = new OutputTable;
             $table->addColumn('Id',       6,  OutputTable::RIGHT);
             $table->addColumn('Parent',   6,  OutputTable::RIGHT);
-            $table->addColumn('Profile',  12, OutputTable::LEFT);
-            $table->addColumn('Job',      25, OutputTable::LEFT);
-            $table->addColumn('%',        4,  OutputTable::RIGHT);
+            $table->addColumn('Profile',  12, OutputTable::RIGHT);
+            $table->addColumn('Name',     16, OutputTable::LEFT);
+            $table->addColumn('Job',      18, OutputTable::RIGHT);
             $table->addColumn('Status',   8,  OutputTable::LEFT);
+            $table->addColumn('%',        4,  OutputTable::RIGHT);
 
             foreach ($tasks as $task) { /* @var $task \Libcast\JobQueue\Task */
                 $job = (string) $task->getJob();
@@ -101,6 +102,7 @@ class ShowQueueCommand extends Command
                     'Id'      => $task->getId(),
                     'Parent'  => $task->getParentId(),
                     'Profile' => $task->getProfile(),
+                    'Name'    => $task->getName(),
                     'Job'     => substr($job, strrpos($job, '\\') + 1),
                     '%'       => $queue->getProgress($task),
                     'Status'  => $task->getStatus(),

@@ -56,7 +56,7 @@ class Worker
         if ($logger) {
             $this->setLogger($logger);
 
-            $this->log("Worker '$this' has started.");
+            $this->log("Worker '$this' has started");
         }
 
         $this->configurePHP();
@@ -124,49 +124,56 @@ class Worker
     {
         $queue = $this->getQueue(); /* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
 
-        while ($task = $queue->fetch($this->getProfile())) { /* @var $task \Libcast\JobQueue\Task */
-
-            $this->log("Worker '$this' received Task '$task'", [
-                'profile'    => $task->getProfile(),
-                'job'        => (string) $task->getJob(),
-                'parameters' => $task->getParameters(),
-            ]);
-
+        while ($task = $queue->fetch($this->getProfile())) {
+            /* @var $task \Libcast\JobQueue\Task */
             try {
-                // get Job from Task
+                // get Task Id (this should throw an exception in case $task is not a Task)
+                $task_id = $task->getId();
+                $this->log("Worker '$this' received Task '$task_id'", [
+                    'name'       => $task->getName(),
+                    'job'        => (string) $task->getJob(),
+                    'parameters' => $task->getParameters(),
+                ]);
+
+                // Get the Job from the Task
                 $class = (string) $task->getJob();
                 $job = new $class($task, $queue, $this->getLogger()); /* @var $job \Libcast\JobQueue\Job\JobInterface */
 
-                // run Job
-                if ($job->execute()) {
-                    $this->log("Task '$task' has been successfully executed.");
+                // Run Job
+                // This will throw exceptions in case of failure
+                $job->execute();
 
-                    // try to enqueue child Tasks,
-                    $finished = true;
-                    foreach ($task->getChildren() as $child) { /* @var $child \Libcast\JobQueue\Task */
+                $this->log("Task '$task_id' has been successfully executed");
+
+                // If no child, the Task will be marked as finished
+                $finished = true;
+
+                if ($children = $task->getChildren()) {
+                    foreach ($children as $child) { /* @var $child \Libcast\JobQueue\Task */
+                        $child->setRootId($task->getRootId());
                         $child->setParentId($task->getId());
-                        $queue->shift($child);
+                        $queue->shift($child, $task);
+
+                        // There is at least one child: the Task is not finished
                         $finished = false;
                     }
+                }
 
-                    if ($finished) {
-                        // no child: the Task is finished
-                        $task->setStatus(Task::STATUS_FINISHED);
-                        $queue->update($task);
-                    } else {
-                        // there is some work to be done with Task's children
-                        // mark Task as success (not yet finished)
-                        $task->setStatus(Task::STATUS_SUCCESS);
-                        $queue->update($task);
-                    }
+                if ($finished) {
+                    // No child: the Task is finished
+                    $task->setStatus(Task::STATUS_FINISHED);
+                    $queue->update($task);
+                } else {
+                    // There is some work to be done with Task's children
+                    // mark Task as success (not yet finished)
+                    $task->setStatus(Task::STATUS_SUCCESS);
+                    $queue->update($task);
                 }
             } catch (\Exception $exception) {
                 // Handle errors
-
-                $this->log("Worker '$this' encountered an error with Task '$task'.", [
+                $this->log("Worker '$this' encountered an error with Task '$task_id'", [
                     $exception->getMessage(),
-                    $exception->getFile(),
-                    $exception->getLine()
+                    $exception->getCode(),
                 ], 'error');
 
                 $task->setStatus(Task::STATUS_FAILED);
@@ -233,7 +240,7 @@ class Worker
 
     function __destruct()
     {
-        $this->log("Worker '$this' stopped.");
+        $this->log("Worker '$this' stopped");
     }
 
     /**
@@ -243,9 +250,13 @@ class Worker
      */
     public function __toString()
     {
-        return sprintf('%s:%s (%s)',
-                gethostname(),
-                $this->getProfile(),
-                uniqid());
+        if (!$this->name) {
+            $this->name = sprintf('%s:%s (%s)',
+                    gethostname(),
+                    $this->getProfile(),
+                    uniqid());
+        }
+
+        return $this->name;
     }
 }

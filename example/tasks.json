@@ -1,77 +1,86 @@
 [
     {
-        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+        "name": "task-A",
         "profile": "dummy",
+        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
         "parameters": {
-            "name": "A",
+            "foo": "bar",
             "duration": 3
         },
         "children": [
             {
-                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                "name": "A1",
                 "profile": "dummy",
+                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
                 "parameters": {
-                    "name": "A1",
+                    "bar": "baz",
                     "duration": 6
                 }
             },
             {
-                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                "name": "A2",
                 "profile": "dummy",
+                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
                 "parameters": {
-                    "name": "A2",
+                    "foo": "bar",
                     "duration": 6
                 },
                 "children": [
                     {
+                        "name": "A2-i",
+                        "profile": "dummy",
+                        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                        "parameters": {
+                            "bar": "baz",
+                            "duration": 2
+                        }
+                    },
+                    {
+                        "name": "A2-ii",
+                        "profile": "dummy",
+                        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                        "parameters": {
+                            "bar": "baz",
+                            "duration": 2
+                        }
+                    },
+                    {
+                        "name": "A2-iii",
+                        "profile": "dummy",
                         "job": "\\Libcast\\JobQueue\\TestJob\\DummyFailingJob",
-                        "profile": "dummy",
                         "parameters": {
-                            "name": "A2-i",
-                            "duration": 2
-                        }
-                    },
-                    {
-                        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
-                        "profile": "dummy",
-                        "parameters": {
-                            "name": "A2-ii",
-                            "duration": 2
-                        }
-                    },
-                    {
-                        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
-                        "profile": "dummy",
-                        "parameters": {
-                            "name": "A2-iii",
+                            "bar": "baz",
                             "duration": 2
                         }
                     }
                 ]
             },
             {
-                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                "name": "A3",
                 "profile": "dummy",
+                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
                 "parameters": {
-                    "name": "A3",
+                    "foo": "bar",
                     "duration": 3
                 }
             },
             {
-                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+                "name": "A4",
                 "profile": "dummy",
+                "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
                 "parameters": {
-                    "name": "A4",
+                    "foo": "bar",
                     "duration": 3
                 }
             }
         ]
     },
     {
-        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
+        "name": "task-B",
         "profile": "dummy",
+        "job": "\\Libcast\\JobQueue\\TestJob\\DummyJob",
         "parameters": {
-            "name": "B"
+            "foo": "baz"
         }
     }
 ]

@@ -47,46 +47,73 @@ class Task implements \JsonSerializable
     const STATUS_FINISHED = 'finished';
 
     /**
+     *
      * @var integer
      */
     protected $id;
 
     /**
-     * @var integer
+     *
+     * @var string
      */
-    protected $parent_id;
+    protected $name;
 
     /**
-     * @var JobInterface
-     */
-    protected $job;
-
-    /**
+     *
      * @var string
      */
     protected $profile;
 
     /**
-     * @var string
+     *
+     * @var JobInterface
      */
-    protected $status = self::STATUS_PENDING;
+    protected $job;
 
     /**
-     * @var float
-     */
-    protected $progress = 0;
-
-    /**
-     * @var int
-     */
-    protected $created_at;
-
-    /**
+     *
      * @var array
      */
     protected $parameters = [];
 
     /**
+     *
+     * @var string
+     */
+    protected $status = self::STATUS_PENDING;
+
+    /**
+     *
+     * @var float
+     */
+    protected $progress = 0;
+
+    /**
+     *
+     * @var int
+     */
+    protected $created_at;
+
+    /**
+     *
+     * @var bool
+     */
+    protected $allow_failure = null;
+
+    /**
+     *
+     * @var integer
+     */
+    protected $root_id;
+
+    /**
+     *
+     * @var integer
+     */
+    protected $parent_id;
+
+    /**
+     *
      * @var array
      */
     protected $children = [];
@@ -94,32 +121,19 @@ class Task implements \JsonSerializable
     /**
      * Create a new Task
      *
-     * @param JobInterface $job
+     * @param $name
      * @param $profile
+     * @param JobInterface $job
      * @param array $parameters
+     * @throws TaskException
      */
-    public function __construct(JobInterface $job, $profile, array $parameters = [])
+    public function __construct($name, $profile, JobInterface $job, array $parameters = [])
     {
-        $this->setJob($job);
+        $this->setName($name);
         $this->setProfile($profile);
+        $this->setJob($job);
         $this->setParameters($parameters);
-        $this->setCreatedAt();
-    }
-
-    /**
-     *
-     * @return array
-     */
-    public static function listStatuses()
-    {
-        return [
-            self::STATUS_PENDING,
-            self::STATUS_WAITING,
-            self::STATUS_RUNNING,
-            self::STATUS_SUCCESS,
-            self::STATUS_FAILED,
-            self::STATUS_FINISHED,
-        ];
+        $this->setCreatedAt($this->getParameter('created_at'));
     }
 
     /**
@@ -142,38 +156,20 @@ class Task implements \JsonSerializable
 
     /**
      *
-     * @param $id
+     * @param string $name
      */
-    public function setParentId($id)
+    public function setName($name)
     {
-        $this->parent_id = $id;
+        $this->name = $name;
     }
 
     /**
      *
-     * @return int
+     * @return string
      */
-    public function getParentId()
+    public function getName()
     {
-        return $this->parent_id;
-    }
-
-    /**
-     *
-     * @param JobInterface $job
-     */
-    public function setJob(JobInterface $job)
-    {
-        $this->job = $job;
-    }
-
-    /**
-     *
-     * @return JobInterface
-     */
-    public function getJob()
-    {
-        return $this->job;
+        return $this->name;
     }
 
     /**
@@ -196,91 +192,20 @@ class Task implements \JsonSerializable
 
     /**
      *
-     * @param $status
-     * @throws TaskException
+     * @param JobInterface $job
      */
-    public function setStatus($status)
+    public function setJob(JobInterface $job)
     {
-        if (!in_array($status, self::listStatuses())) {
-            throw new TaskException("The status '$status' does not exists.");
-        }
-
-        $this->status = $status;
+        $this->job = $job;
     }
 
     /**
      *
-     * @return string
-     * @throws TaskException
+     * @return JobInterface
      */
-    public function getStatus()
+    public function getJob()
     {
-        if (!$this->status) {
-            $this->setStatus(self::STATUS_PENDING);
-        }
-
-        return $this->status;
-    }
-
-    /**
-     *
-     * @param float $percent
-     * @throws TaskException
-     */
-    public function setProgress($percent)
-    {
-        if (!is_numeric($percent)) {
-            throw new TaskException('Progress must be numeric.');
-        }
-
-        if ($percent < 0) {
-            throw new TaskException('Progress must be bigger or equal to 0 (0%).');
-        }
-
-        if ($percent > 1) {
-            throw new TaskException('Progress must be less or equal to 1 (100%).');
-        }
-
-        $this->progress = $percent;
-    }
-
-    /**
-     *
-     * @return float
-     */
-    public function getProgress()
-    {
-        return $this->progress;
-    }
-
-    /**
-     *
-     * @param string $string A valid date format (Eg. '2013-11-30 20:30:50')
-     * @throws \Libcast\JobQueue\Exception\TaskException
-     */
-    protected function setCreatedAt($date = null)
-    {
-        try {
-            $dateTime = new \DateTime($date);
-            $this->created_at = $dateTime->getTimestamp();
-        } catch (\Exception $e) {
-            throw new TaskException("Impossible to set '$date' as date of creation.");
-        }
-    }
-
-    /**
-     *
-     * @param string $format
-     * @return bool|string
-     * @throws TaskException
-     */
-    public function getCreatedAt($format = 'U')
-    {
-        if (!$this->created_at) {
-            $this->setCreatedAt();
-        }
-
-        return date($format, $this->created_at);
+        return $this->job;
     }
 
     /**
@@ -324,15 +249,176 @@ class Task implements \JsonSerializable
 
     /**
      *
+     * @param $status
+     * @throws TaskException
+     */
+    public function setStatus($status)
+    {
+        if (!in_array($status, self::listStatuses())) {
+            throw new TaskException("The status '$status' does not exists");
+        }
+
+        $this->status = $status;
+    }
+
+    /**
+     *
+     * @return string
+     * @throws TaskException
+     */
+    public function getStatus()
+    {
+        if (!$this->status) {
+            $this->setStatus(self::STATUS_PENDING);
+        }
+
+        return $this->status;
+    }
+
+    /**
+     *
+     * @return array
+     */
+    public static function listStatuses()
+    {
+        return [
+            self::STATUS_PENDING,
+            self::STATUS_WAITING,
+            self::STATUS_RUNNING,
+            self::STATUS_SUCCESS,
+            self::STATUS_FAILED,
+            self::STATUS_FINISHED,
+        ];
+    }
+
+    /**
+     *
+     * @param float $percent
+     * @throws TaskException
+     */
+    public function setProgress($percent)
+    {
+        if (!is_numeric($percent)) {
+            throw new TaskException('Progress must be numeric');
+        }
+
+        if ($percent < 0) {
+            throw new TaskException('Progress must be bigger or equal to 0 (0%)');
+        }
+
+        if ($percent > 1) {
+            throw new TaskException('Progress must be less or equal to 1 (100%)');
+        }
+
+        $this->progress = $percent;
+    }
+
+    /**
+     *
+     * @return float
+     */
+    public function getProgress()
+    {
+        return $this->progress;
+    }
+
+    /**
+     *
+     * @param string $string A valid date format (Eg. '2013-11-30 20:30:50')
+     * @throws \Libcast\JobQueue\Exception\TaskException
+     */
+    protected function setCreatedAt($date = null)
+    {
+        try {
+            $dateTime = new \DateTime($date);
+            $this->created_at = $dateTime->getTimestamp();
+        } catch (\Exception $e) {
+            throw new TaskException("Impossible to set '$date' as date of creation");
+        }
+    }
+
+    /**
+     *
+     * @param string $format
+     * @return bool|string
+     * @throws TaskException
+     */
+    public function getCreatedAt($format = 'U')
+    {
+        if (!$this->created_at) {
+            $this->setCreatedAt();
+        }
+
+        return date($format, $this->created_at);
+    }
+
+    /**
+     *
+     * @return bool
+     */
+    public function canFail()
+    {
+        if (is_null($this->allow_failure)) {
+            $this->allow_failure = $this->getParameter('allow_failure', false);
+        }
+
+        return (bool) $this->allow_failure;
+    }
+
+    /**
+     *
+     * @param int $root_id
+     */
+    public function setRootId($root_id)
+    {
+        $this->root_id = $root_id;
+    }
+
+    /**
+     *
+     * @return int
+     */
+    public function getRootId()
+    {
+        return $this->isRoot() ? $this->getId() : $this->root_id;
+    }
+
+    /**
+     *
+     * @return bool
+     */
+    public function isRoot()
+    {
+        return is_null($this->root_id);
+    }
+
+    /**
+     *
+     * @param $id
+     */
+    public function setParentId($id)
+    {
+        $this->parent_id = $id;
+    }
+
+    /**
+     *
+     * @return int
+     */
+    public function getParentId()
+    {
+        return $this->parent_id;
+    }
+
+    /**
+     *
      * @param Task $task
      */
     public function addChild(Task $task)
     {
         $task->setParentId($this->getId());
 
-        // As children are queued in list's tail
-        // they need to be added in reverse order
-        array_unshift($this->children, $task);
+        $this->children[] = $task;
     }
 
     /**
@@ -375,19 +461,20 @@ class Task implements \JsonSerializable
         }
 
         if (!isset($data['job'])) {
-            throw new TaskException('Missing Job.');
+            throw new TaskException('Missing Job');
         }
 
         if (!isset($data['profile'])) {
-            throw new TaskException('Missing profile.');
+            throw new TaskException('Missing profile');
         }
 
-        $task = new Task(new $data['job'], $data['profile'], $data['parameters']);
+        $task = new Task($data['name'], $data['profile'], new $data['job'], $data['parameters']);
         $task->setId($data['id']);
-        $task->setParentId($data['parent_id']);
         $task->setStatus($data['status']);
         $task->setProgress($data['progress']);
         $task->setCreatedAt(date('Y-m-d H:i:s', $data['created_at']));
+        $task->setRootId($data['root_id']);
+        $task->setParentId($data['parent_id']);
 
         foreach ($data['children'] as $child) {
             $task->addChild(self::build($child));
@@ -405,13 +492,15 @@ class Task implements \JsonSerializable
     {
         $array = [
             'id'         => $this->getId(),
-            'parent_id'  => $this->getParentId(),
-            'job'        => (string) $this->getJob(),
+            'name'       => $this->getName(),
             'profile'    => $this->getProfile(),
+            'job'        => (string) $this->getJob(),
+            'parameters' => $this->getParameters(),
             'status'     => $this->getStatus(),
             'progress'   => $this->getProgress(),
             'created_at' => $this->getCreatedAt(),
-            'parameters' => $this->getParameters(),
+            'root_id'    => $this->getRootId(),
+            'parent_id'  => $this->getParentId(),
         ];
 
         $array['children'] = [];
@@ -428,11 +517,15 @@ class Task implements \JsonSerializable
      */
     public function __toString()
     {
-        if ($this->getId()) {
-            return (string) $this->getId();
+        if ($name = $this->getName()) {
+            return $name;
         }
 
-        return sprintf('%s "%s" Task (%s).',
+        if ($id = $this->getId()) {
+            return (string) $id;
+        }
+
+        return sprintf('%s "%s" Task (%s)',
                 ucfirst($this->getStatus()),
                 $this->getProfile(),
                 $this->getCreatedAt('Y-m-d H:i:s'));

@@ -43,11 +43,11 @@ class OutputTable
     public function addRow(array $cells, $style = null)
     {
         if (count($cells) !== $this->countColumns()) {
-            throw new CommandException('Number of cell is not valid.');
+            throw new CommandException('Number of cell is not valid');
         }
 
         if (count(array_diff(array_keys($cells), $this->getColumnTitles()))) {
-            throw new CommandException('One or more cells have a wrong title.');
+            throw new CommandException('One or more cells have a wrong title');
         }
 
         foreach ($cells as $column_title => $cell_value) {
@@ -154,7 +154,7 @@ class OutputTable
     protected function getCell($column, $row)
     {
         if (!isset($this->rows[$row][$column])) {
-          throw new CommandException("Their is no value for column '$column', row '$row'.");
+          throw new CommandException("Their is no value for column '$column', row '$row'");
         }
 
         return $this->rows[$row][$column];

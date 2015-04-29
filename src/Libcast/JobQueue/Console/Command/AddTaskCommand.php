@@ -25,11 +25,12 @@ class AddTaskCommand extends Command
         $this
             ->setName('task:add')
             ->setDescription('Add a Task')
+            ->addArgument('name',         InputArgument::REQUIRED,     'Name of the Task')
+            ->addArgument('profile',      InputArgument::REQUIRED,     'Profile of the Task')
             ->addArgument('job',          InputArgument::REQUIRED,     'Job class namespace')
             ->addOption('parent-id', 'i', InputOption::VALUE_OPTIONAL, 'Set parent Id (Eg. 123)', null)
-            ->addOption('profile',   'p', InputOption::VALUE_REQUIRED, 'Set profile (Eg. "high-cpu")', null)
             ->addOption('status',    's', InputOption::VALUE_REQUIRED, 'Set status (Eg. waiting)', Task::STATUS_PENDING)
-            ->addOption('parameter', 't', InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, 'Add a parameter (Eg. --parameter="bitrate: 1024")', [])
+            ->addOption('parameter', 'p', InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, 'Add a parameter (Eg. --parameter="bitrate: 1024")', [])
         ;
 
         parent::configure();
@@ -49,22 +50,23 @@ class AddTaskCommand extends Command
 
         $job = (string) $input->getArgument('job');
         if (!class_exists($job)) {
-            throw new CommandException("Job class '$job' does not exists.");
+            throw new CommandException("Job class '$job' does not exists");
         }
 
         $parameters = [];
         foreach ($input->getOption('parameter') as $parameter) {
             list($key, $value) = explode(':', $parameter);
             if (!$key or !$value) {
-                throw new CommandException("The '$parameter' parameter is malformed.");
+                throw new CommandException("The '$parameter' parameter is malformed");
             }
 
             $parameters[trim($key)] = trim($value);
         }
 
         $task = new Task(
+            $input->getArgument('name'),
+            $input->getArgument('profile'),
             new $job,
-            $input->getOption('profile'),
             $parameters
         );
 
@@ -81,7 +83,7 @@ class AddTaskCommand extends Command
 
         $id = $queue->enqueue($task);
 
-        $this->addLine("Task '$id' has been added to queue.");
+        $this->addLine("Task '$id' has been added to queue");
         $output->writeln($this->getLines());
     }
 }

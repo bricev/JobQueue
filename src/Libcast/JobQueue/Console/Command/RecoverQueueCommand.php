@@ -58,9 +58,9 @@ class RecoverQueueCommand extends Command
                 $queue->update($task);
             }
 
-            $this->addLine('The queue has been recovered.');
+            $this->addLine('The queue has been recovered');
         } else {
-            $this->addLine('Cancelled.');
+            $this->addLine('Cancelled');
         }
 
         $output->writeln($this->getLines());

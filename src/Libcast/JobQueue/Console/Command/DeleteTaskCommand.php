@@ -36,7 +36,7 @@ class DeleteTaskCommand extends Command
 
         $queue->delete($task);
 
-        $this->addLine("Task $task has been deleted from the Queue.");
+        $this->addLine("Task $task has been deleted from the Queue");
 
         $output->writeln($this->getLines());
     }

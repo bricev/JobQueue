@@ -31,7 +31,7 @@ class QueueFactory
         }
 
         if (!isset($parameters['client'])) {
-            throw new QueueException('A valid client must be set in parameters.');
+            throw new QueueException('A valid client must be set in parameters');
         }
 
         switch (true) {
@@ -39,6 +39,6 @@ class QueueFactory
                 return new RedisQueue($parameters['client']);
         }
 
-        throw new QueueException('The submitted client is not yet supported.');
+        throw new QueueException('The submitted client is not yet supported');
     }
 }

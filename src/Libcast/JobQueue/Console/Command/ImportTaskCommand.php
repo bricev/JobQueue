@@ -44,16 +44,16 @@ class ImportTaskCommand extends Command
 
         $file = $input->getArgument('file');
         if (!is_readable($file)) {
-            throw new CommandException("JSON file '$file' does not exists or is not readable.");
+            throw new CommandException("JSON file '$file' does not exists or is not readable");
         }
 
         if (!$items = json_decode(file_get_contents($file), true)) {
-            throw new CommandException("File '$file' is malformed (must be JSON).");
+            throw new CommandException("File '$file' is malformed (must be JSON)");
         }
 
         foreach ($this->getTasks($items) as $task) { /* @var $task \Libcast\JobQueue\Task */
             $id = $queue->enqueue($task);
-            $this->addLine("Task '$id' has been added to queue.");
+            $this->addLine("Task '$id' has been added to queue");
         }
 
         $output->writeln($this->getLines());
@@ -69,25 +69,30 @@ class ImportTaskCommand extends Command
     {
         $tasks = [];
         foreach ($items as $item) {
+            // Get name
+            if (!isset($item['name']) or !$name = $item['name']) {
+                throw new CommandException('Missing Task name');
+            }
+
             // Get Job
             if (!isset($item['job']) or !$job = $item['job']) {
-                throw new CommandException('Missing Job.');
-            } elseif (!class_exists($job)) {
-                throw new CommandException("Job '$job' does not exists.");
+                throw new CommandException('Missing Job');
+            } else if (!class_exists($job)) {
+                throw new CommandException("Job '$job' does not exists");
             } else {
                 $job = new $job;
             }
 
             // Get profile
             if (!isset($item['profile']) or !$profile = $item['profile']) {
-                throw new CommandException('Missing Profile.');
+                throw new CommandException('Missing Profile');
             }
 
             // Get parameters
             $parameters = isset($item['parameters']) ? $item['parameters'] : [];
 
             // Generate the Task
-            $task = new Task($job, $profile, $parameters);
+            $task = new Task($name, $profile, $job, $parameters);
 
             // Add children to the Task
             if (isset($item['children']) and $children = $item['children']) {

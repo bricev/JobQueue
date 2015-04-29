@@ -123,7 +123,7 @@ abstract class AbstractJob
         }
 
         if ($strict and is_null($default)) {
-            throw new JobException("Missing '$key' parameter.");
+            throw new JobException("Missing '$key' parameter");
         }
 
         return $default;
@@ -187,15 +187,33 @@ abstract class AbstractJob
      */
     public function execute()
     {
-        switch (false) {
-            case $this->setup():        $action = 'setup';
-            case $this->perform():      $action = isset($action) ?: 'perform';
-            case $this->terminate():    $action = isset($action) ?: 'terminate';
+        $exception = null;
 
-                throw new JobException("Task '$this->task' Job has failed to $action");
+        try {
+            switch (false) {
+                case $this->setup():        $action = 'setup';
+                case $this->perform():      $action = isset($action) ? $action : 'perform';
+                case $this->terminate():    $action = isset($action) ? $action : 'terminate';
+
+                    throw new JobException("Impossible to $action the Job");
+            }
+        } catch (\Exception $e) {
+            if ($this->getTask()->canFail()) {
+                // If Task can fail, then silently log the error...
+                $this->log('Silenced Job failure', [
+                    $e->getMessage(),
+                    $e->getFile(),
+                    $e->getLine(),
+                ], 'error');
+            } else {
+                // ... otherwise re-throw the exception
+                $exception = $e;
+            }
         }
 
-        return true;
+        if ($exception instanceof \Exception) {
+            throw new \Exception($exception->getMessage(), $exception->getCode(), $exception);
+        }
     }
 
     /**
@@ -207,11 +225,11 @@ abstract class AbstractJob
     protected function setTaskProgress($percent)
     {
         if (!$queue = $this->getQueue()) {
-            throw new JobException('There is no Queue to update Task progress.');
+            throw new JobException('There is no Queue to update Task progress');
         }
 
         if (!$task = $this->getTask()) {
-            throw new JobException('There is no Task to set progress to.');
+            throw new JobException('There is no Task to set progress to');
         }
 
         $task->setProgress($percent);

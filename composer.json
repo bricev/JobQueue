@@ -1,7 +1,7 @@
 {
-    "name": "libcast/jobqueue",
+    "name": "bricev/jobqueue",
     "type": "library",
-    "description": "Job/Queue system that execute Tasks through Workers",
+    "description": "JobQueue lists Tasks that bear Jobs which are executed by Workers",
     "homepage": "https://github.com/bricev/JobQueue",
     "license": "MIT",
     "require": {
@@ -9,12 +9,8 @@
         "monolog/monolog": "~1.4",
         "predis/predis": "~0.8",
         "symfony/console": "~2.1",
-        "symfony/process": "~2.1",
         "symfony/filesystem": "~2.1",
         "pimple/pimple": "~1.1"
-    },
-    "suggest": {
-        "swiftmailer/swiftmailer": "Allows workers to email logs"
     },
     "autoload": {
         "psr-0": {"Libcast": "src/"}

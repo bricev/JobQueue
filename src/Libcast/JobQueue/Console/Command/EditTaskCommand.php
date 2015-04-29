@@ -64,10 +64,10 @@ class EditTaskCommand extends Command
         }
 
         if ($update) {
-            $header = "Task '$task' has been updated.";
+            $header = "Task '$task' has been updated";
             $queue->update($task);
         } else {
-            $header = "Nothing to update on Task '$task'.";
+            $header = "Nothing to update on Task '$task'";
         }
 
         $table = new OutputTable;

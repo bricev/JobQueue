@@ -17,6 +17,6 @@ class NullJob extends AbstractJob implements JobInterface
 {
     public function perform()
     {
-        throw new JobException('This Job is not meant to be executed.');
+        throw new JobException('This Job is not meant to be executed');
     }
 }

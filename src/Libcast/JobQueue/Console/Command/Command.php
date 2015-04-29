@@ -64,11 +64,11 @@ class Command extends BaseCommand
         $filesystem = new Filesystem();
 
         if (!$filesystem->isAbsolutePath($config)) {
-            $config = getcwd().'/'.$config;
+            $config = getcwd() . DIRECTORY_SEPARATOR . $config;
         }
         // die(getcwd());
         if (!is_file($config)) {
-            throw new \InvalidArgumentException(sprintf('Configuration file "%s" does not exist.', $config));
+            throw new \InvalidArgumentException(sprintf('Configuration file "%s" does not exist', $config));
         }
 
         $this->jobQueue = require $config;
