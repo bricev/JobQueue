@@ -171,10 +171,10 @@ class Worker
                 }
             } catch (\Exception $exception) {
                 // Handle errors
-                $this->log("Worker '$this' encountered an error with Task '$task_id'", [
+                $this->log("Worker '$this' encountered an error with Task '$task_id ($task)'", [
                     $exception->getMessage(),
                     $exception->getCode(),
-                ], 'error');
+                ], 'critical');
 
                 $task->setStatus(Task::STATUS_FAILED);
                 $queue->update($task);
