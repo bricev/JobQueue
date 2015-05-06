@@ -4,13 +4,9 @@ PHP JobQueue component
 Simple Job/Queue PHP composent to help applications distribute Tasks through
 multiple workers.
 
-Tasks may have children (sub tasks that are added to Queue when their parents
-have been successfuly executed).
+JobQueue enables to follow Tasks progress.
 
-Queue enables to follow Tasks progress. A Task reach 100% progress when all its
-children have been finished too.
-
-Currently only Redis has been integrated to store Queue data.
+Currently only Redis has been integrated to store Tasks.
 
 Vocabulary:
 
@@ -40,7 +36,7 @@ Install
 Use composer to install the composent dependancies :
 
 	cd /path/to/composent
-	php composer.phar install
+	composer install
 
 
 Write a Job
@@ -48,9 +44,13 @@ Write a Job
 
 Jobs are simple class that must extend the `AbstractJob` parent class.
 
-Jobs must be setup through a `setup()` method that must at least provide
-a name and may add some Job required parameters and settings, and pre
-execute routines.
+Jobs must implement the `JobInterface`. Therefore, a `perform()` method must
+be written with the main Job work to be executed by workers. This method must
+return `true` otherwise worker will consider the Job execution as failed.
+
+Jobs may be setup through a `setup()` method that must return `true` if used.
+If some stuff need to be done after the main work, a `terminate()` methode can
+be used and must also return `true` if used.
 
 See example/Job to view a Job example.
 
@@ -74,13 +74,15 @@ at the `task:import` command):
 
 require '/path/to/vendor/autoload.php';
 
-use Libcast\JobQueue\Task\Task;
+use Libcast\JobQueue\Task;
 use Libcast\JobQueue\Queue\QueueFactory;
+use Libcast\JobQueue\TestJob\DummyJob;
 use Predis\Client;
 
 $task = new Task(
-    new Libcast\JobQueue\Test\DummyJob,
+    'a-dummy-task-name',
     'dummy',
+    new DummyJob,
     [
         'param1' => 'foo',
         'param2' => 'bar',
@@ -95,6 +97,40 @@ $queue = QueueFactory::build($redis);
 
 // add Tasks to the Queue
 $queue->enqueue($task);
+```
+
+
+Nested Tasks
+------------
+
+A Task can have children. Children are enqueued when their parents have been
+executed successfully by the Worker. To add a Task as a child of a parent Task,
+you may proceed like in the example above :
+
+```php
+$task = new Task(/* ... */);
+$child = new Task(/* ... */);
+
+$task->addChild($child);
+```
+
+A Task reach 100% progress when all its children have been finished too.
+
+
+Get Task progress
+-----------------
+
+To get the Task progress you simply can call `getProgress()` from a Queue object.
+
+```php
+// setup a Redis client
+$redis = new Client('tcp://localhost:6379');
+
+// load Queue
+$queue = QueueFactory::build($redis);
+
+// get Task progress
+$queue->getProgress(123); // where 123 is a Task ID
 ```
 
 

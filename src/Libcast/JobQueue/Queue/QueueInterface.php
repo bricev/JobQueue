@@ -82,9 +82,9 @@ interface QueueInterface
     /**
      * Calculate the progress of a Task and its children.
      *
-     * @param Task $task
+     * @param $id
      * @param bool $human_readable
      * @return float|string
      */
-    public function getProgress(Task $task, $human_readable = true);
+    public function getProgress($id, $human_readable = true);
 }

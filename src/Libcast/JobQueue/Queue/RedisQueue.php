@@ -435,15 +435,13 @@ class RedisQueue extends AbstractQueue implements QueueInterface
 
     /**
      *
-     * @param Task $task
+     * @param $id
      * @param bool $human_readable
      * @return float|string
      */
-    public function getProgress(Task $task, $human_readable = true)
+    public function getProgress($id, $human_readable = true)
     {
-        $id = $task instanceof Task ? $task->getId() : $task;
-
-        if (!$task = $this->getTask($id)) {
+        if (!$task = $this->getTask($id instanceof Task ? $id->getId() : $id)) {
             return 0;
         }
 
