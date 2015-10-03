@@ -72,6 +72,12 @@ class Task implements \JsonSerializable
 
     /**
      *
+     * @var string
+     */
+    protected $worker_name = null;
+
+    /**
+     *
      * @var array
      */
     protected $parameters = [];
@@ -210,6 +216,24 @@ class Task implements \JsonSerializable
 
     /**
      *
+     * @param string $worker_name
+     */
+    public function setWorkerName($worker_name)
+    {
+        $this->worker_name = $worker_name;
+    }
+
+    /**
+     *
+     * @return string
+     */
+    public function getWorkerName()
+    {
+        return $this->worker_name;
+    }
+
+    /**
+     *
      * @param array $parameters
      */
     protected function setParameters(array $parameters)
@@ -327,10 +351,10 @@ class Task implements \JsonSerializable
      * @param string $string A valid date format (Eg. '2013-11-30 20:30:50')
      * @throws \Libcast\JobQueue\Exception\TaskException
      */
-    protected function setCreatedAt($date = null)
+    protected function setCreatedAt($date = null, $timezone = 'Europe/Paris')
     {
         try {
-            $dateTime = new \DateTime($date);
+            $dateTime = new \DateTime($date, new \DateTimeZone($timezone));
             $this->created_at = $dateTime->getTimestamp();
         } catch (\Exception $e) {
             throw new TaskException("Impossible to set '$date' as date of creation");
@@ -470,6 +494,7 @@ class Task implements \JsonSerializable
 
         $task = new Task($data['name'], $data['profile'], new $data['job'], $data['parameters']);
         $task->setId($data['id']);
+        $task->setWorkerName($data['worker_name']);
         $task->setStatus($data['status']);
         $task->setProgress($data['progress']);
         $task->setCreatedAt(date('Y-m-d H:i:s', $data['created_at']));
@@ -491,16 +516,17 @@ class Task implements \JsonSerializable
     public function jsonSerialize()
     {
         $array = [
-            'id'         => $this->getId(),
-            'name'       => $this->getName(),
-            'profile'    => $this->getProfile(),
-            'job'        => (string) $this->getJob(),
-            'parameters' => $this->getParameters(),
-            'status'     => $this->getStatus(),
-            'progress'   => $this->getProgress(),
-            'created_at' => $this->getCreatedAt(),
-            'root_id'    => $this->getRootId(),
-            'parent_id'  => $this->getParentId(),
+            'id'          => $this->getId(),
+            'name'        => $this->getName(),
+            'profile'     => $this->getProfile(),
+            'job'         => (string) $this->getJob(),
+            'worker_name' => $this->getWorkerName(),
+            'parameters'  => $this->getParameters(),
+            'status'      => $this->getStatus(),
+            'progress'    => $this->getProgress(),
+            'created_at'  => $this->getCreatedAt(),
+            'root_id'     => $this->getRootId(),
+            'parent_id'   => $this->getParentId(),
         ];
 
         $array['children'] = [];

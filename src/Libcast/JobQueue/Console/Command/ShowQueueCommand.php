@@ -87,25 +87,23 @@ class ShowQueueCommand extends Command
 
         if ($count) {
             $table = new OutputTable;
-            $table->addColumn('Id',       6,  OutputTable::RIGHT);
-            $table->addColumn('Parent',   6,  OutputTable::RIGHT);
-            $table->addColumn('Profile',  12, OutputTable::RIGHT);
-            $table->addColumn('Name',     16, OutputTable::LEFT);
-            $table->addColumn('Job',      18, OutputTable::RIGHT);
-            $table->addColumn('Status',   8,  OutputTable::LEFT);
-            $table->addColumn('%',        4,  OutputTable::RIGHT);
+            $table->addColumn('Id',      5,  OutputTable::RIGHT);
+            $table->addColumn('Parent',  5,  OutputTable::RIGHT);
+            $table->addColumn('Profile', 10, OutputTable::RIGHT);
+            $table->addColumn('Name',    14, OutputTable::LEFT);
+            $table->addColumn('Worker',  20, OutputTable::LEFT);
+            $table->addColumn('Status',  8,  OutputTable::LEFT);
+            $table->addColumn('%',       4,  OutputTable::RIGHT);
 
             foreach ($tasks as $task) { /* @var $task \Libcast\JobQueue\Task */
-                $job = (string) $task->getJob();
-
                 $table->addRow([
                     'Id'      => $task->getId(),
                     'Parent'  => $task->getParentId(),
                     'Profile' => $task->getProfile(),
                     'Name'    => $task->getName(),
-                    'Job'     => substr($job, strrpos($job, '\\') + 1),
-                    '%'       => $queue->getProgress($task),
+                    'Worker'  => strstr($task->getWorkerName(), '@', true),
                     'Status'  => $task->getStatus(),
+                    '%'       => $queue->getProgress($task),
                 ], $task->getStatus());
             }
 

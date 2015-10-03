@@ -25,15 +25,6 @@ abstract class AbstractQueue
      */
     public function __construct($client)
     {
-        $this->setClient($client);
-    }
-
-    /**
-     *
-     * @param object $client
-     */
-    public function setClient($client)
-    {
         $this->client = $client;
     }
 
@@ -41,7 +32,7 @@ abstract class AbstractQueue
      *
      * @return object
      */
-    public function getClient()
+    protected function getClient()
     {
         return $this->client;
     }

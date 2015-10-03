@@ -19,20 +19,20 @@ class OutputTable
 
     const RIGHT = 'right';
 
-    protected $columns = array();
+    protected $columns = [];
 
-    protected $rows = array();
+    protected $rows = [];
 
-    protected $row_style = array();
+    protected $row_style = [];
 
     protected $lenght = 0;
 
     public function addColumn($title, $width, $align)
     {
-        $this->columns[$title] = array(
-            'width' => max(array(strlen($title), $width)),
+        $this->columns[$title] = [
+            'width' => max([strlen($title), $width]),
             'align' => $align,
-        );
+        ];
     }
 
     protected function countColumns()

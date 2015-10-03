@@ -11,10 +11,13 @@
 
 namespace Libcast\JobQueue;
 
+use Doctrine\Common\Cache\Cache;
 use Libcast\JobQueue\Queue\QueueInterface;
 
 class Worker
 {
+    use LoggerTrait;
+
     /**
      *
      * @var string
@@ -29,65 +32,69 @@ class Worker
 
     /**
      *
+     * @var \Doctrine\Common\Cache\Cache
+     */
+    protected $cache;
+
+    /**
+     *
      * @var string
      */
     protected $profile;
 
     /**
      *
-     * @var \Psr\Log\LoggerInterface|null
+     * @var int Unix timestamp
      */
-    protected $logger;
+    protected $started_at;
 
     /**
      * Setup a Worker to connect the Queue.
      * The Worker will receive Tasks from Queue profiled sets.
      * Each Task will setup a Job that can be run (executed).
      *
-     * @param string                                  $profile  Name of the `profile` handled by this worker
-     * @param \Libcast\JobQueue\Queue\QueueInterface  $queue    Queue instance
-     * @param \Psr\Log\LoggerInterface                $logger   Implementation of Psr\Log interface
+     * @param                               $profile
+     * @param QueueInterface                $queue
+     * @param Cache|null                    $cache
+     * @param \Psr\Log\LoggerInterface|null $logger
      */
-    public function __construct($profile, QueueInterface $queue, \Psr\Log\LoggerInterface $logger = null)
-    {
-        $this->setProfile($profile);
-        $this->setQueue($queue);
-
-        if ($logger) {
-            $this->setLogger($logger);
-
-            $this->log("Worker '$this' has started");
-        }
-
-        $this->configurePHP();
-    }
-
-    /**
-     * Set the profile handled by this Worker
-     *
-     * @param $profile
-     */
-    protected function setProfile($profile)
+    public function __construct($profile, QueueInterface $queue, Cache $cache = null, \Psr\Log\LoggerInterface $logger = null)
     {
         $this->profile = $profile;
+        $this->queue = $queue;
+        $this->cache = $cache;
+        $this->started_at = time();
+
+        if ($logger) {
+            $this->setLogger($logger, $this);
+        }
+
+        $this->info('Worker started');
     }
 
     /**
      *
      * @return string
      */
-    protected function getProfile()
+    public function getName()
     {
-        return $this->profile;
+        if ($this->name) {
+            return $this->name;
+        }
+
+        return $this->name = sprintf('JobQueue:%s:%s @%s',
+            gethostname(),
+            $this->getProfile(),
+            $this->getStartedAt('y-m-d H:i:s'));
     }
 
     /**
      *
-     * @param \Libcast\JobQueue\Queue\QueueInterface $queue
+     * @return string
      */
-    protected function setQueue(QueueInterface $queue)
+    public function getProfile()
     {
-        $this->queue = $queue;
+        return $this->profile;
     }
 
     /**
@@ -101,20 +108,20 @@ class Worker
 
     /**
      *
-     * @param \Psr\Log\LoggerInterface $logger
+     * @return Cache
      */
-    protected function setLogger(\Psr\Log\LoggerInterface $logger)
+    protected function getCache()
     {
-        $this->logger = $logger;
+        return $this->cache;
     }
 
     /**
      *
-     * @return \Psr\Log\LoggerInterface
+     * @return int
      */
-    protected function getLogger()
+    public function getStartedAt($format = 'U')
     {
-        return $this->logger;
+        return date($format, $this->started_at);
     }
 
     /**
@@ -123,27 +130,28 @@ class Worker
     public function run()
     {
         $queue = $this->getQueue(); /* @var $queue \Libcast\JobQueue\Queue\RedisQueue */
+        $cache = $this->getCache();
 
-        while ($task = $queue->fetch($this->getProfile())) {
-            /* @var $task \Libcast\JobQueue\Task */
+        while ($task = $queue->fetch($this->getProfile())) { /* @var $task \Libcast\JobQueue\Task */
+            // Set the logger for better Task tracking
+            $this->setLoggerTask($task);
+
             try {
                 // get Task Id (this should throw an exception in case $task is not a Task)
                 $task_id = $task->getId();
-                $this->log("Worker '$this' received Task '$task_id'", [
-                    'name'       => $task->getName(),
-                    'job'        => (string) $task->getJob(),
-                    'parameters' => $task->getParameters(),
+                $this->info('New Task', $task->getParameters(), [
+                    'job_class' => (string) $task->getJob(),
                 ]);
 
                 // Get the Job from the Task
                 $class = (string) $task->getJob();
-                $job = new $class($task, $queue, $this->getLogger()); /* @var $job \Libcast\JobQueue\Job\JobInterface */
+                $job = new $class($task, $this, $queue, $cache, $this->getLogger()); /* @var $job \Libcast\JobQueue\Job\JobInterface */
 
                 // Run Job
                 // This will throw exceptions in case of failure
                 $job->execute();
 
-                $this->log("Task '$task_id' has been successfully executed");
+                $this->info('Task successfully executed');
 
                 // If no child, the Task will be marked as finished
                 $finished = true;
@@ -171,10 +179,10 @@ class Worker
                 }
             } catch (\Exception $exception) {
                 // Handle errors
-                $this->log("Worker '$this' encountered an error with Task '$task_id ($task)'", [
-                    $exception->getMessage(),
-                    $exception->getCode(),
-                ], 'critical');
+                $this->error('Task failed', [
+                    'error_message' => $exception->getMessage(),
+                    'error_code' => $exception->getCode(),
+                ]);
 
                 $task->setStatus(Task::STATUS_FAILED);
                 $queue->update($task);
@@ -184,63 +192,9 @@ class Worker
         }
     }
 
-    /**
-     * Configure initial PHP settings to improve Worker's running
-     *
-     */
-    protected function configurePHP()
-    {
-        // makes sure the Worker has space
-        ini_set('memory_limit', '-1');
-        ini_set('max_execution_time', '-1');
-        set_time_limit(0);
-
-        $logger = $this->getLogger();
-
-        // send errors to logger if exists
-        set_error_handler(function ($code, $message, $file, $line, $context) use ($logger) {
-            if ($logger) {
-                switch ($code) {
-                    case E_NOTICE:
-                    case E_DEPRECATED:
-                    case E_USER_NOTICE:
-                    case E_USER_DEPRECATED:
-                    case E_STRICT:
-                    case E_WARNING:
-                    case E_USER_WARNING:
-                        $method = 'debug';
-                        break;
-
-                    default :
-                        $method = 'error';
-                }
-
-                $logger->$method($message, [
-                    'file'    => $file,
-                    'line'    => $line,
-                    'context' => $context,
-                ]);
-            }
-        });
-    }
-
-    /**
-     * Log message only if a logger has been set
-     *
-     * @param   string  $message
-     * @param   mixed   $context
-     * @param   string  $level    info|warning|error|debug
-     */
-    protected function log($message, $context = [], $level = 'info')
-    {
-        if ($logger = $this->getLogger()) {
-            $logger->$level($message, (array) $context);
-        }
-    }
-
     function __destruct()
     {
-        $this->log("Worker '$this' stopped");
+        $this->debug('Worker stopped');
     }
 
     /**
@@ -250,13 +204,6 @@ class Worker
      */
     public function __toString()
     {
-        if (!$this->name) {
-            $this->name = sprintf('%s:%s (%s)',
-                    gethostname(),
-                    $this->getProfile(),
-                    uniqid());
-        }
-
-        return $this->name;
+        return $this->getName();
     }
 }

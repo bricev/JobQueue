@@ -12,7 +12,7 @@ use Libcast\JobQueue\TestJob;
 $redis = new Client('tcp://localhost:6379');
 $queue = QueueFactory::build($redis);
 
-$task = new Task(new TestJob\DummyJob, 'dummy', []);
+$task = new Task('Dummy Task', 'dummy', new TestJob\DummyJob, []);
 
 $queue->enqueue($task);
 

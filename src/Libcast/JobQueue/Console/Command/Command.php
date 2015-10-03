@@ -16,12 +16,49 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Filesystem\Filesystem;
+use Libcast\JobQueue\JobQueue;
 
 class Command extends BaseCommand
 {
-    protected $lines = array('');
+    /**
+     *
+     * @var JobQueue
+     */
+    protected $jobQueue;
 
     /**
+     *
+     * @var array
+     */
+    protected $lines = [];
+
+    /**
+     * @see Command
+     */
+    protected function initialize(InputInterface $input, OutputInterface $output)
+    {
+        $this->input = $input;
+        $this->output = $output;
+
+        $config = $input->getArgument('config');
+        if (is_null($config)) {
+            $config = getcwd() . '/config/jobqueue.php';
+        }
+        $filesystem = new Filesystem();
+
+        if (!$filesystem->isAbsolutePath($config)) {
+            $config = getcwd() . DIRECTORY_SEPARATOR . $config;
+        }
+
+        if (!is_file($config)) {
+            throw new \InvalidArgumentException(sprintf('Configuration file "%s" does not exist', $config));
+        }
+
+        $this->jobQueue = require $config;
+    }
+
+    /**
+     *
      * @see Command
      */
     protected function configure()
@@ -42,6 +79,15 @@ class Command extends BaseCommand
 
     /**
      *
+     * @return \Doctrine\Common\Cache\Cache
+     */
+    protected function getCache()
+    {
+        return $this->jobQueue['cache'];
+    }
+
+    /**
+     *
      * @return \Psr\Log\LoggerInterface
      */
     protected function getLogger()
@@ -50,30 +96,9 @@ class Command extends BaseCommand
     }
 
     /**
-     * @see Command
+     *
+     * @param null $line
      */
-    protected function initialize(InputInterface $input, OutputInterface $output)
-    {
-        $this->input = $input;
-        $this->output = $output;
-
-        $config = $input->getArgument('config');
-        if (is_null($config)) {
-            $config = getcwd() . '/config/jobqueue.php';
-        }
-        $filesystem = new Filesystem();
-
-        if (!$filesystem->isAbsolutePath($config)) {
-            $config = getcwd() . DIRECTORY_SEPARATOR . $config;
-        }
-        // die(getcwd());
-        if (!is_file($config)) {
-            throw new \InvalidArgumentException(sprintf('Configuration file "%s" does not exist', $config));
-        }
-
-        $this->jobQueue = require $config;
-    }
-
     protected function addLine($line = null)
     {
         if (!$line) {
@@ -88,6 +113,10 @@ class Command extends BaseCommand
         $this->lines[] = $line;
     }
 
+    /**
+     *
+     * @return array
+     */
     protected function getLines()
     {
         $this->lines[] = '';
@@ -95,8 +124,12 @@ class Command extends BaseCommand
         return $this->lines;
     }
 
+    /**
+     * Clear prompt lines cache
+     *
+     */
     protected function flushLines()
     {
-        $this->lines = array('');
+        $this->lines = [];
     }
 }

@@ -36,11 +36,10 @@ class RunWorkerCommand extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $worker = new Worker(
-            $input->getArgument('profile'),
+        $worker = new Worker($input->getArgument('profile'),
             $this->getQueue(),
-            $this->getLogger()
-        );
+            $this->getCache(),
+            $this->getLogger());
 
         $worker->run();
     }

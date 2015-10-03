@@ -11,9 +11,12 @@
 
 namespace Libcast\JobQueue\Job;
 
+use Doctrine\Common\Cache\Cache;
 use Libcast\JobQueue\Exception\JobException;
+use Libcast\JobQueue\LoggerTrait;
 use Libcast\JobQueue\Queue\QueueInterface;
 use Libcast\JobQueue\Task;
+use Libcast\JobQueue\Worker;
 
 /**
  *
@@ -21,23 +24,7 @@ use Libcast\JobQueue\Task;
  */
 abstract class AbstractJob
 {
-    /**
-     *
-     * @var \Psr\Log\LoggerInterface
-     */
-    protected $logger;
-
-    /**
-     *
-     * @var array
-     */
-    protected $parameters = [];
-
-    /**
-     *
-     * @var \Libcast\JobQueue\Queue\QueueInterface
-     */
-    protected $queue;
+    use LoggerTrait;
 
     /**
      *
@@ -47,19 +34,64 @@ abstract class AbstractJob
 
     /**
      *
+     * @var \Libcast\JobQueue\Worker
+     */
+    protected $worker;
+
+    /**
+     *
+     * @var \Libcast\JobQueue\Queue\QueueInterface
+     */
+    protected $queue;
+
+    /**
+     *
+     * @var \Doctrine\Common\Cache\Cache
+     */
+    protected $cache;
+
+    /**
+     *
+     * @var array
+     */
+    protected $parameters = [];
+
+    /**
+     *
      * @param Task $task
      * @param QueueInterface $queue
      * @param \Psr\Log\LoggerInterface $logger
      */
-    function __construct(Task $task = null, QueueInterface $queue = null, \Psr\Log\LoggerInterface $logger = null)
+    function __construct(Task $task = null, Worker $worker = null, QueueInterface $queue = null, Cache $cache = null, \Psr\Log\LoggerInterface $logger = null)
     {
+        $this->setLogger($logger, $worker, $task);
+
         $this->task = $task;
+        $this->worker = $worker;
         $this->queue = $queue;
-        $this->logger = $logger;
+        $this->cache = $cache;
 
         if ($task instanceof Task) {
             $this->setParameters($task->getParameters());
         }
+    }
+
+    /**
+     *
+     * @return Task
+     */
+    protected function getTask()
+    {
+        return $this->task;
+    }
+
+    /**
+     *
+     * @return Worker
+     */
+    protected function getWorker()
+    {
+        return $this->worker;
     }
 
     /**
@@ -73,11 +105,11 @@ abstract class AbstractJob
 
     /**
      *
-     * @return Task
+     * @return Cache
      */
-    protected function getTask()
+    public function getCache()
     {
-        return $this->task;
+        return $this->cache;
     }
 
     /**
@@ -130,39 +162,6 @@ abstract class AbstractJob
     }
 
     /**
-     * Sets a PSR valid logger
-     *
-     * @param   \Psr\Log\LoggerInterface  $logger
-     */
-    protected function setLogger(\Psr\Log\LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * 
-     * @return \Psr\Log\LoggerInterface
-     */
-    protected function getLogger()
-    {
-        return $this->logger;
-    }
-
-    /**
-     * Log message only if a logger has been set
-     *
-     * @param   string  $message
-     * @param   mixed   $context
-     * @param   string  $level    info|warning|error|debug
-     */
-    protected function log($message, $context = [], $level = 'info')
-    {
-        if ($logger = $this->getLogger()) {
-            $logger->$level($message, (array) $context);
-        }
-    }
-
-    /**
      *
      * @return bool
      */
@@ -187,24 +186,27 @@ abstract class AbstractJob
      */
     public function execute()
     {
+        // Set worker name for better Job tracking
+        $this->getTask()->setWorkerName((string) $this->getWorker());
+
         $exception = null;
 
         try {
-            switch (false) {
-                case $this->setup():        $action = 'setup';
-                case $this->perform():      $action = isset($action) ? $action : 'perform';
-                case $this->terminate():    $action = isset($action) ? $action : 'terminate';
-
-                    throw new JobException("Impossible to $action the Job");
+            if (!$this->setup()) {
+                throw new JobException('Impossible to setup the Job');
+            } elseif (!$this->perform()) {
+                throw new JobException('Impossible to perform the Job');
+            } elseif (!$this->terminate()) {
+                throw new JobException('Impossible to terminate the Job');
             }
         } catch (\Exception $e) {
             if ($this->getTask()->canFail()) {
                 // If Task can fail, then silently log the error...
-                $this->log('Silenced Job failure', [
+                $this->warning('Silenced Job failure', [
                     $e->getMessage(),
                     $e->getFile(),
                     $e->getLine(),
-                ], 'error');
+                ]);
             } else {
                 // ... otherwise re-throw the exception
                 $exception = $e;
@@ -212,7 +214,7 @@ abstract class AbstractJob
         }
 
         if ($exception instanceof \Exception) {
-            throw new \Exception($exception->getMessage(), $exception->getCode(), $exception);
+            throw new JobException($exception->getMessage(), $exception->getCode(), $exception);
         }
     }
 

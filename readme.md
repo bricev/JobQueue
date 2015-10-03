@@ -80,10 +80,10 @@ use Libcast\JobQueue\TestJob\DummyJob;
 use Predis\Client;
 
 $task = new Task(
-    'a-dummy-task-name',
-    'dummy',
-    new DummyJob,
-    [
+    'a-dummy-task', // Task name
+    'dummy',        // Task profile
+    new DummyJob,   // Job that must handle the Task
+    [               // Params
         'param1' => 'foo',
         'param2' => 'bar',
     ]
