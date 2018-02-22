@@ -1,5 +1,3 @@
 /.idea
+/cache
 /vendor
-/example/log
-/log
-/composer.phar

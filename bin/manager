@@ -1,0 +1,16 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__.'/../vendor/autoload.php';
+
+use JobQueue\Application\Manager;
+use Symfony\Component\Console\Application;
+
+$application = new Application;
+$application->add(new Manager\ListTasks);
+$application->add(new Manager\AddTask);
+$application->add(new Manager\ShowTask);
+$application->add(new Manager\EditTask);
+$application->add(new Manager\RestoreTasks);
+$application->add(new Manager\FlushTasks);
+$application->run();

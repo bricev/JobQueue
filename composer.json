@@ -1,20 +1,25 @@
 {
-    "name": "libcast-transcoding/jobqueue",
-    "type": "library",
-    "description": "JobQueue lists Tasks that bear Jobs which are executed by Workers",
-    "homepage": "https://github.com/bricev/JobQueue",
-    "license": "MIT",
-    "require": {
-        "php": ">=5.4.0",
-        "monolog/monolog": "~1.4",
-        "predis/predis": "~0.8",
-        "symfony/console": "~2.1",
-        "symfony/filesystem": "~2.1",
-        "doctrine/cache" : "~1.0",
-        "pimple/pimple": "~1.1"
-    },
-    "autoload": {
-        "psr-0": {"Libcast": "src/"}
-    },
-    "bin": [ "bin/jobqueue" ]
+  "name": "bricev/jobqueue",
+  "type": "library",
+  "description": "JobQueue is a PHP component that queues `Tasks` defining `Jobs` which can be executed by `Workers`",
+  "homepage": "https://github.com/bricev/JobQueue",
+  "license": "MIT",
+  "require": {
+    "php": ">=7.1.0",
+    "monolog/monolog": "^1.0",
+    "predis/predis": "^1.0",
+    "ramsey/uuid": "^3.0",
+    "symfony/config": "^4.0",
+    "symfony/console": "^4.0",
+    "symfony/dependency-injection": "^4.0",
+    "symfony/yaml": "^4.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "JobQueue\\": "src"
+    }
+  },
+  "bin": [
+    "bin/jobqueue"
+  ]
 }
