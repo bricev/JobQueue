@@ -11,9 +11,10 @@ final class ApiRouting
     /**
      *
      * @param string $dir
+     * @param bool   $disable
      * @return Dispatcher
      */
-    public static function createFromCache(string $dir): Dispatcher
+    public static function createFromCache(string $dir, bool $disable = false): Dispatcher
     {
         return cachedDispatcher(function (RouteCollector $r) {
             $r->get('/tasks', new ListTasks);
@@ -22,7 +23,7 @@ final class ApiRouting
 
         }, [
             'cacheFile' => $dir,
-            'cacheDisabled' => true,
+            'cacheDisabled' => $disable,
         ]);
     }
 }
