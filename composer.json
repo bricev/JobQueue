@@ -1,7 +1,7 @@
 {
   "name": "bricev/jobqueue",
   "type": "library",
-  "description": "JobQueue is a PHP component that queues `Tasks` defining `Jobs` which can be executed by `Workers`",
+  "description": "JobQueue is a PHP component that queues `tasks` defining `jobs` which can be executed by asynchronous and/or distributed `workers`",
   "homepage": "https://github.com/bricev/JobQueue",
   "license": "MIT",
   "require": {
@@ -12,14 +12,17 @@
     "middlewares/payload": "^1.0",
     "middlewares/request-handler": "^1.0",
     "predis/predis": "^1.0",
-    "relay/relay": "2.x@dev",
     "psr/log": "^1.0",
     "ramsey/uuid": "^3.0",
+    "relay/relay": "2.x@dev",
     "symfony/config": "^4.0",
     "symfony/console": "^4.0",
     "symfony/dependency-injection": "^4.0",
     "symfony/yaml": "^4.0",
     "zendframework/zend-diactoros": "^1.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^6"
   },
   "suggest": {
     "monolog/monolog": "Supported logger library"
@@ -29,7 +32,13 @@
       "JobQueue\\": "src"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "JobQueue\\Tests\\": "tests/src"
+    }
+  },
   "bin": [
-    "bin/jobqueue"
+    "bin/manager",
+    "bin/worker"
   ]
 }
