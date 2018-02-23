@@ -163,7 +163,7 @@ final class RedisQueue implements Queue
         }
 
         // Order Tasks
-        uasort($tasks, function ($a, $b) use ($orderBy) {
+        usort($tasks, function ($a, $b) use ($orderBy) {
             $aValue = $a[$orderBy];
             $bValue = $b[$orderBy];
 
