@@ -4,7 +4,7 @@ namespace JobQueue\Domain\Task;
 
 use JobQueue\Domain\Job\ExecutableJob;
 
-final class Task implements \Serializable
+final class Task implements \Serializable, \JsonSerializable
 {
     /**
      *
@@ -189,6 +189,22 @@ final class Task implements \Serializable
         $this->jobName = $array[3];
         $this->createdAt = $array[4];
         $this->parameters = $array[5];
+    }
+
+    /**
+     *
+     * @return array
+     */
+    function jsonSerialize(): array
+    {
+        return [
+            'identifier' => (string) $this->identifier,
+            'status'     => (string) $this->status,
+            'profile'    => (string) $this->profile,
+            'job'        => $this->jobName,
+            'date'       => $this->getCreatedAt('r'),
+            'parameters' => $this->parameters,
+        ];
     }
 
     /**
