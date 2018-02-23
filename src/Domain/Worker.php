@@ -5,14 +5,10 @@ namespace JobQueue\Domain;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Queue;
 use JobQueue\Domain\Task\Status;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
-use Psr\Log\LogLevel;
+use Psr\Log\LoggerInterface;
 
-final class Worker implements LoggerAwareInterface
+final class Worker
 {
-    use LoggerAwareTrait;
-
     /**
      *
      * @var string
@@ -45,27 +41,17 @@ final class Worker implements LoggerAwareInterface
     }
 
     /**
-     * Fetch tasks from queue and perform their affiliated job
      *
+     * @param LoggerInterface|null $logger
      */
-    public function run(): void
+    public function run(LoggerInterface $logger = null): void
     {
-        $this->log('Worker starts running', [
-            'worker' => $this->name,
-            'profile' => (string) $this->profile
-        ]);
-
         while ($task = $this->queue->fetch($this->profile)) {
             // Set up the job
             $job = $task->getJob();
-            if ($this->logger) {
-                $job->setLogger($this->logger);
+            if ($logger) {
+                $job->setLogger($logger);
             }
-
-            $this->log('Worker execute a task', [
-                'task' => (string) $task->getIdentifier(),
-                'job' => (string) $task->getJobName()
-            ]);
 
             try {
                 $job->setUp($task);
@@ -74,29 +60,9 @@ final class Worker implements LoggerAwareInterface
 
             } catch (\Exception $e) {
                 $this->queue->updateStatus($task, new Status(Status::FAILED));
-
-                $this->log('Worker failed to execute the job', [
-                    'task' => (string) $task->getIdentifier(),
-                    'job' => (string) $task->getJobName()
-                ]);
             }
 
             $this->queue->updateStatus($task, new Status(Status::FINISHED));
         }
-
-    }
-
-    /**
-     *
-     * @param string $message
-     * @param array  $context
-     * @param string $level
-     */
-    private function log(string $message, array $context = [], string $level = LogLevel::INFO): void {
-        if (!$this->logger) {
-            return;
-        }
-
-        $this->logger->log($level, $message, $context);
     }
 }

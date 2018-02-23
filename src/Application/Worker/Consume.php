@@ -41,9 +41,11 @@ final class Consume extends Command
 
         $this->formatInfoSection(sprintf('Worker %s is running...', $name), $output);
 
-        $queue = ServiceContainer::getInstance()->queue;
+        $services = ServiceContainer::getInstance();
+        $queue = $services->queue;
+        $logger = isset($services->logger) ? $services->logger : null;
 
-        (new Worker($name, $queue, $profile))->run();
+        (new Worker($name, $queue, $profile))->run($logger);
 
         $this->formatErrorSection(sprintf('Worker %s has hanged out!', $name), $output);
     }
