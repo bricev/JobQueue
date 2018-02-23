@@ -16,6 +16,10 @@ final class Profile
      */
     public function __construct(string $name)
     {
+        if (!preg_match('/^[_a-z0-9-]+$/', $name)) {
+            throw new \RuntimeException('Profile name only allows lowercase alphanumerical, dash and underscore characters');
+        }
+
         $this->name = $name;
     }
 
