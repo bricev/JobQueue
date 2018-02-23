@@ -5,14 +5,23 @@
   "homepage": "https://github.com/bricev/JobQueue",
   "license": "MIT",
   "require": {
-    "php": ">=7.1.0",
-    "monolog/monolog": "^1.0",
+    "php": "^7.1",
+    "http-interop/response-sender": "^1.0",
+    "middlewares/error-handler": "^1.0",
+    "middlewares/fast-route": "^1.0",
+    "middlewares/request-handler": "^1.0",
     "predis/predis": "^1.0",
+    "relay/relay": "2.x@dev",
+    "psr/log": "^1.0",
     "ramsey/uuid": "^3.0",
     "symfony/config": "^4.0",
     "symfony/console": "^4.0",
     "symfony/dependency-injection": "^4.0",
-    "symfony/yaml": "^4.0"
+    "symfony/yaml": "^4.0",
+    "zendframework/zend-diactoros": "^1.0"
+  },
+  "suggest": {
+    "monolog/monolog": "Supported logger library"
   },
   "autoload": {
     "psr-4": {
