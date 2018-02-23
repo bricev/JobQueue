@@ -11,6 +11,7 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 /**
  *
  * @property \JobQueue\Domain\Task\Queue $queue
+ * @property \Psr\Log\LoggerInterface $logger
  */
 final class ServiceContainer
 {
@@ -69,6 +70,16 @@ final class ServiceContainer
         }
 
         return self::$instance = new self($services);
+    }
+
+    /**
+     *
+     * @param $service
+     * @return bool
+     */
+    public function __isset($service)
+    {
+        return $this->services->has($service);
     }
 
     /**
