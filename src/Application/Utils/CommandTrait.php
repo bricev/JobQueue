@@ -3,10 +3,32 @@
 namespace JobQueue\Application\Utils;
 
 use JobQueue\Domain\Task\Task;
+use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Output\OutputInterface;
 
 trait CommandTrait
 {
+    /**
+     *
+     * @param OutputInterface $output
+     */
+    private function setStyles(OutputInterface $output): void
+    {
+        $styles = [
+            'waiting'  => new OutputFormatterStyle('blue'),
+            'running'  => new OutputFormatterStyle('cyan', null, ['bold', 'blink']),
+            'finished' => new OutputFormatterStyle('green'),
+            'failed'   => new OutputFormatterStyle('red', null, ['bold']),
+        ];
+
+        foreach ($styles as $name => $style) {
+            $output
+                ->getFormatter()
+                ->setStyle($name, $style)
+            ;
+        }
+    }
+
     /**
      *
      * @param string          $text
@@ -101,7 +123,7 @@ EOL;
      * @param OutputInterface $output
      * @return string
      */
-    private function formatCellContent(string $value, string $style, OutputInterface $output): string {
+    private function formatContent(string $value, string $style, OutputInterface $output): string {
         return $output
             ->getFormatter()
             ->format(sprintf('<%s>%s</>', $style, $value));

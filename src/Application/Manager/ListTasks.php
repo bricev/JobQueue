@@ -7,8 +7,8 @@ use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Infrastructure\ServiceContainer;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Helper\Table;
+use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -17,6 +17,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 final class ListTasks extends Command
 {
     use CommandTrait;
+
+    /**
+     *
+     * @var Profile
+     */
+    private $profile;
+
+    /**
+     *
+     * @var Status
+     */
+    private $status;
 
     public function configure(): void
     {
@@ -27,6 +39,7 @@ final class ListTasks extends Command
             ->addOption('status', 's', InputOption::VALUE_OPTIONAL, 'Limits the listing to a status')
             ->addOption('order', 'o', InputOption::VALUE_REQUIRED, 'Orders tasks by "date", "profile" or "status"', 'status')
             ->addOption('follow', 'f', InputOption::VALUE_NONE, 'Enables to keep tasks evolution on the console')
+            ->addOption('legend', 'l', InputOption::VALUE_NONE, 'Displays a legend for status labels at the list footer')
         ;
     }
 
@@ -37,30 +50,78 @@ final class ListTasks extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): void
     {
-        // Clear screen for `follow` mode
-        if ($input->getOption('follow')) {
-            system('clear');
-        }
+        $this->setStyles($output);
 
-        $queue = ServiceContainer::getInstance()->queue;
-
-        $profile = $input->getOption('profile')
+        $this->profile = $input->getOption('profile')
             ? new Profile($input->getOption('profile'))
             : null;
 
-        $status = $input->getOption('status')
+        $this->status = $input->getOption('status')
             ? new Status($input->getOption('status'))
             : null;
 
-        $order = $input->getOption('order');
+        // Clear screen for `follow` mode
+        if ($follow = $input->getOption('follow')) {
+            system('clear');
+        }
 
-        $this->setStyles($output);
+        $this->display($follow, $input, $output);
+    }
 
+    /**
+     *
+     * @param bool            $follow
+     * @param InputInterface  $input
+     * @param OutputInterface $output
+     */
+    private function display(bool $follow, InputInterface $input, OutputInterface $output): void
+    {
+        $tasks = $this->getTasks($input->getOption('order'), $output);
+
+        if (empty($tasks)) {
+            $this->formatInfoBlock(
+                sprintf('There is currently no task corresponding to %s profile and %s status in queue.',
+                    $this->profile ?: 'any',
+                    $this->status ?: 'any'),
+                $output
+            );
+
+        } else {
+            if ($input->getOption('legend')) {
+                $tasks = $this->addTableFooter($tasks, $output);
+            }
+
+            (new Table($output))
+                ->setHeaders(['Job', 'Profile', 'Date', 'Identifier'])
+                ->setRows($tasks)
+                ->render()
+            ;
+        }
+
+        // follow mode
+        if ($follow) {
+            sleep(1);
+            system('clear');
+
+            $this->display($follow, $input, $output);
+        }
+    }
+
+    /**
+     *
+     * @param string          $order
+     * @param OutputInterface $output
+     * @return array
+     */
+    public function getTasks(string $order, OutputInterface $output): array
+    {
         $tasks = [];
         $previousSeparator = null;
-        foreach ($queue->dump($profile, $status, $order) as $task) {
-            $taskStatus = (string) $task->getStatus();
-            $taskProfile = (string) $task->getProfile();
+        $queue = ServiceContainer::getInstance()->queue;
+
+        foreach ($queue->dump($this->profile, $this->status, $order) as $task) {
+            $status = (string) $task->getStatus();
+            $profile = (string) $task->getProfile();
 
             switch ($order) {
                 case 'date':
@@ -68,12 +129,12 @@ final class ListTasks extends Command
                     break;
 
                 case 'profile':
-                    $separator = $taskProfile;
+                    $separator = $profile;
                     break;
 
                 case 'status':
                 default:
-                    $separator = $taskStatus;
+                    $separator = $status;
             }
 
             if ($previousSeparator and $separator !== $previousSeparator) {
@@ -81,9 +142,8 @@ final class ListTasks extends Command
             }
 
             $tasks[] = [
-                $this->formatCellContent($taskStatus, $taskStatus, $output),
-                $taskProfile,
-                $task->getJobName(true),
+                sprintf('%s %s', $this->formatContent('■', $status, $output), $task->getJobName(true)),
+                $profile,
                 $task->getCreatedAt('Y-m-d H:i:s'),
                 $task->getIdentifier(),
             ];
@@ -91,44 +151,27 @@ final class ListTasks extends Command
             $previousSeparator = $separator;
         }
 
-        if (empty($tasks)) {
-            $this->formatInfoBlock(
-                sprintf('There is currently no task corresponding to %s profile and %s status in queue.',
-                    $profile ?: 'any',
-                    $status ?: 'any'),
-                $output
-            );
-
-        } else {
-            $table = (new Table($output))
-                ->setHeaders(['Status', 'Profile', 'Job', 'Date', 'Identifier'])
-                ->setRows($tasks)
-            ;
-            $table->render();
-        }
-
-        // follow mode
-        if ($input->getOption('follow')) {
-            sleep(1);
-            system('clear');
-
-            $this->execute($input, $output);
-        }
+        return $tasks;
     }
 
     /**
      *
      * @param OutputInterface $output
+     * @return array
      */
-    private function setStyles(OutputInterface $output): void
+    private function addTableFooter(array $rows, OutputInterface $output): array
     {
-        foreach ([
-            'waiting'  => new OutputFormatterStyle('blue'),
-            'running'  => new OutputFormatterStyle('cyan', null, ['bold', 'blink']),
-            'finished' => new OutputFormatterStyle('green'),
-            'failed'   => new OutputFormatterStyle('red', null, ['bold']),
-        ] as $name => $style) {
-            $output->getFormatter()->setStyle($name, $style);
+        $legend = [];
+        foreach (Status::listStatus() as $status) {
+            $legend[] = sprintf('%s %s', $this->formatContent('■', $status, $output), $status);
         }
+
+        $rows[] = new TableSeparator;
+        $rows[] = [new TableCell(
+            sprintf('Legend:   %s', implode('   ', $legend)),
+            ['colspan' => count(Status::listStatus())]
+        )];
+
+        return $rows;
     }
 }
