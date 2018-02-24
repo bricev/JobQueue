@@ -96,6 +96,9 @@ final class ListTasks extends Command
                 ->setRows($tasks)
                 ->render()
             ;
+
+            $output->writeln(sprintf('There is %d tasks in queue', count($tasks)));
+            $output->writeln('');
         }
 
         // follow mode
