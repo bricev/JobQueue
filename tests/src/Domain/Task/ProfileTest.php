@@ -1,6 +1,6 @@
 <?php
 
-namespace JobQueue\Tests\Task;
+namespace JobQueue\Tests\Domain\Task;
 
 use JobQueue\Domain\Task\Profile;
 use PHPUnit\Framework\TestCase;

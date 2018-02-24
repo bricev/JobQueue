@@ -1,11 +1,10 @@
 <?php
 
-namespace JobQueue\Tests\Task;
+namespace JobQueue\Tests\Domain\Task;
 
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Task;
-use JobQueue\Tests\Utils\ComplexTOSnakeCASE;
-use JobQueue\Tests\Utils\DummyJob;
+use JobQueue\Tests\Domain\Job;
 use PHPUnit\Framework\TestCase;
 
 final class TaskTest extends TestCase
@@ -14,7 +13,7 @@ final class TaskTest extends TestCase
     {
         $task = new Task(
             new Profile('test'),
-            new DummyJob
+            new Job\DummyJob
         );
 
         $serializedTask = serialize($task);
@@ -31,13 +30,13 @@ final class TaskTest extends TestCase
     {
         $task = new Task(
             new Profile('test'),
-            new DummyJob
+            new Job\DummyJob
         );
-        $this->assertEquals('dummy_job', $task->getJobName(true));
+        $this->assertEquals('dummy', $task->getJobName(true));
 
         $complexNameJob = new Task(
             new Profile('test'),
-            new ComplexTOSnakeCASE
+            new Job\ComplexTOSnakeCASEJob
         );
         $this->assertEquals('complex_to_snake_case', $complexNameJob->getJobName(true));
     }
