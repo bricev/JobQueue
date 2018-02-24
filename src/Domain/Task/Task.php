@@ -80,7 +80,7 @@ final class Task implements \Serializable, \JsonSerializable
      *
      * @param Status $status
      */
-    public function updateStatus(Status $status): void
+    public function updateStatus(Status $status)
     {
         $this->status = $status;
     }
@@ -105,6 +105,7 @@ final class Task implements \Serializable, \JsonSerializable
 
     /**
      *
+     * @param bool $humanReadable
      * @return string
      */
     public function getJobName(bool $humanReadable = false): string
@@ -179,7 +180,7 @@ final class Task implements \Serializable, \JsonSerializable
      *
      * @param string $serialized
      */
-    public function unserialize($serialized): void
+    public function unserialize($serialized)
     {
         $array = unserialize($serialized);
 

@@ -23,7 +23,7 @@ final class Status
     public function __construct($value)
     {
         if (!in_array($value, self::listStatus(), true)) {
-            throw new \Exception(sprintf('Impossible to create a "%s" status', $value));
+            throw new \RuntimeException(sprintf('Impossible to create a "%s" status', $value));
         }
 
         $this->value = $value;
