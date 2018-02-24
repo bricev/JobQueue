@@ -30,7 +30,7 @@ final class ListTasks extends Command
      */
     private $status;
 
-    public function configure(): void
+    public function configure()
     {
         $this
             ->setName('list')
@@ -45,10 +45,11 @@ final class ListTasks extends Command
 
     /**
      *
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
+     * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->setStyles($output);
 
@@ -66,6 +67,8 @@ final class ListTasks extends Command
         }
 
         $this->display($follow, $input, $output);
+
+        return 0;
     }
 
     /**
@@ -74,7 +77,7 @@ final class ListTasks extends Command
      * @param InputInterface  $input
      * @param OutputInterface $output
      */
-    private function display(bool $follow, InputInterface $input, OutputInterface $output): void
+    private function display(bool $follow, InputInterface $input, OutputInterface $output)
     {
         $tasks = $this->getTasks($input->getOption('order'), $output);
 
@@ -159,6 +162,7 @@ final class ListTasks extends Command
 
     /**
      *
+     * @param array $rows
      * @param OutputInterface $output
      * @return array
      */

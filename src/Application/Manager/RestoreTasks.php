@@ -14,7 +14,7 @@ final class RestoreTasks extends Command
 {
     use CommandTrait;
 
-    public function configure(): void
+    public function configure()
     {
         $this
             ->setName('restore')
@@ -25,10 +25,11 @@ final class RestoreTasks extends Command
 
     /**
      *
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
+     * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (!$input->getOption('force')) {
             $helper = $this->getHelper('question');
@@ -44,5 +45,7 @@ final class RestoreTasks extends Command
             ->restore();
 
         $this->formatInfoSection('Queue restored', $output);
+
+        return 0;
     }
 }

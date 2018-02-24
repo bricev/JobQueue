@@ -14,7 +14,7 @@ final class FlushTasks extends Command
 {
     use CommandTrait;
 
-    public function configure(): void
+    public function configure()
     {
         $this
             ->setName('flush')
@@ -25,10 +25,11 @@ final class FlushTasks extends Command
 
     /**
      *
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
+     * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (!$input->getOption('force')) {
             $helper = $this->getHelper('question');
@@ -44,5 +45,7 @@ final class FlushTasks extends Command
             ->flush();
 
         $this->formatInfoSection('Queue flushed', $output);
+
+        return 0;
     }
 }

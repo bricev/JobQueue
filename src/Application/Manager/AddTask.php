@@ -15,7 +15,7 @@ final class AddTask extends Command
 {
     use CommandTrait;
 
-    public function configure(): void
+    public function configure()
     {
         $this
             ->setName('add')
@@ -28,10 +28,11 @@ final class AddTask extends Command
 
     /**
      *
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
+     * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $jobName = $input->getArgument('job');
 
@@ -52,5 +53,7 @@ final class AddTask extends Command
             ->add($task);
 
         $this->formatTaskBlock($task, $output);
+
+        return 0;
     }
 }

@@ -33,8 +33,9 @@ final class Consume extends Command
      *
      * @param InputInterface $input
      * @param OutputInterface $output
+     * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $services = ServiceContainer::getInstance();
 
@@ -57,5 +58,7 @@ final class Consume extends Command
         } else {
             $this->formatErrorSection(sprintf('Worker %s has hanged out!', $name), $output);
         }
+
+        return 0;
     }
 }

@@ -13,7 +13,7 @@ final class ShowTask extends Command
 {
     use CommandTrait;
 
-    public function configure(): void
+    public function configure()
     {
         $this
             ->setName('show')
@@ -24,15 +24,18 @@ final class ShowTask extends Command
 
     /**
      *
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
+     * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $queue = ServiceContainer::getInstance()->queue;
 
         $task = $queue->find($input->getArgument('identifier'));
 
         $this->formatTaskBlock($task, $output);
+
+        return 0;
     }
 }

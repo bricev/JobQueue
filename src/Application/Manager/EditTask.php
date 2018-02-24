@@ -14,7 +14,7 @@ final class EditTask extends Command
 {
     use CommandTrait;
 
-    public function configure(): void
+    public function configure()
     {
         $this
             ->setName('edit')
@@ -26,10 +26,11 @@ final class EditTask extends Command
 
     /**
      *
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
+     * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $queue = ServiceContainer::getInstance()->queue;
 
@@ -38,5 +39,7 @@ final class EditTask extends Command
         $queue->updateStatus($task, new Status($input->getArgument('status')));
 
         $this->formatTaskBlock($task, $output);
+
+        return 0;
     }
 }
