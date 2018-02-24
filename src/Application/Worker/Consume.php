@@ -17,36 +17,45 @@ final class Consume extends Command
 {
     use CommandTrait;
 
-    public function configure(): void
+    public function configure()
     {
         $this
             ->setName('consume')
             ->setDescription('Consumes tasks from the queue')
-            ->setHelp('Consumes tasks from a queue depending on one or multiple profiles. Each task is consumed by executing the corresponding job.')
+            ->setHelp("Consumes tasks from a queue depending on one or multiple profiles.  \nEach task is consumed by executing the corresponding job.\n ")
             ->addArgument('profile', InputArgument::REQUIRED, 'Name of the profile to consume')
             ->addOption('name', 'w', InputOption::VALUE_OPTIONAL, 'Name of the worker')
+            ->addOption('quantity', 'x', InputOption::VALUE_OPTIONAL, 'Quantity of tasks to consume')
         ;
     }
 
     /**
      *
-     * @param InputInterface  $input
+     * @param InputInterface $input
      * @param OutputInterface $output
      */
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $name = $input->getOption('name') ?: Uuid::uuid4();
+        $services = ServiceContainer::getInstance();
 
-        $profile = new Profile($input->getArgument('profile'));
+        $worker = new Worker(
+            $name = $input->getOption('name') ?: Uuid::uuid4(),
+            $services->queue,
+            new Profile($input->getArgument('profile'))
+        );
+
+        if (isset($services->logger)) {
+            $worker->setLogger($services->logger);
+        }
 
         $this->formatInfoSection(sprintf('Worker %s is running...', $name), $output);
 
-        $services = ServiceContainer::getInstance();
-        $queue = $services->queue;
-        $logger = isset($services->logger) ? $services->logger : null;
+        $worker->consume($quantity = (int) $input->getOption('quantity') ?: null);
 
-        (new Worker($name, $queue, $profile))->run($logger);
-
-        $this->formatErrorSection(sprintf('Worker %s has hanged out!', $name), $output);
+        if ($quantity) {
+            $this->formatInfoSection(sprintf('Worker %s is done.', $name), $output);
+        } else {
+            $this->formatErrorSection(sprintf('Worker %s has hanged out!', $name), $output);
+        }
     }
 }
