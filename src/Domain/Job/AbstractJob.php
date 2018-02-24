@@ -14,7 +14,10 @@ abstract class AbstractJob implements ExecutableJob
      *
      * @param Task $task
      */
-    public function setUp(Task $task): void {}
+    public function setUp(Task $task): void
+    {
+        return;
+    }
 
     /**
      *
@@ -26,7 +29,10 @@ abstract class AbstractJob implements ExecutableJob
      *
      * @param Task $task
      */
-    public function tearDown(Task $task): void {}
+    public function tearDown(Task $task): void
+    {
+        return;
+    }
 
     /**
      *
@@ -34,12 +40,12 @@ abstract class AbstractJob implements ExecutableJob
      * @param array  $context
      * @param string $level
      */
-    protected function log(string $message, array $context = [], string $level = LogLevel::INFO): void {
+    protected function log(string $message, array $context = [], string $level = LogLevel::INFO)
+    {
         if (!$this->logger) {
             return;
         }
 
         $this->logger->log($level, $message, $context);
     }
-
 }
