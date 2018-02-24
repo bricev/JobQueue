@@ -14,25 +14,19 @@ abstract class AbstractJob implements ExecutableJob
      *
      * @param Task $task
      */
-    public function setUp(Task $task): void
-    {
-        return;
-    }
+    public function setUp(Task $task) {}
 
     /**
      *
      * @param Task $task
      */
-    abstract function perform(Task $task): void;
+    abstract function perform(Task $task);
 
     /**
      *
      * @param Task $task
      */
-    public function tearDown(Task $task): void
-    {
-        return;
-    }
+    public function tearDown(Task $task) {}
 
     /**
      *

@@ -39,7 +39,7 @@ final class RedisQueue implements Queue
      *
      * @param Task $task
      */
-    public function add(Task $task): void
+    public function add(Task $task)
     {
         $this->predis->set($this->getKey($task), serialize($task));
         $this->predis->lpush($this->getTaskList($task), $task->getIdentifier());
@@ -94,7 +94,7 @@ final class RedisQueue implements Queue
      * @param Task   $task
      * @param Status $status
      */
-    public function updateStatus(Task $task, Status $status): void
+    public function updateStatus(Task $task, Status $status)
     {
         if ((string) $status === $task->getStatus()) {
             return;
@@ -180,7 +180,20 @@ final class RedisQueue implements Queue
         return $tasks;
     }
 
-    public function flush(): void
+    /**
+     *
+     * @param string $identifier
+     */
+    public function delete(string $identifier)
+    {
+        $task = $this->find($identifier);
+
+        $this->predis->lrem($this->getTaskList($task), 0, (string) $task);
+
+        $this->predis->del($this->getKey($task));
+    }
+
+    public function flush()
     {
         $pipe = $this->predis->pipeline();
 
@@ -191,7 +204,7 @@ final class RedisQueue implements Queue
         $pipe->execute();
     }
 
-    public function restore(): void
+    public function restore()
     {
         $tasks = $this->dump();
 

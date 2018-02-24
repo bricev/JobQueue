@@ -36,7 +36,7 @@ final class Worker implements LoggerAwareInterface
      * @param Queue   $queue
      * @param Profile $profile
      */
-    public function __construct($name, Queue $queue, Profile $profile)
+    public function __construct(string $name, Queue $queue, Profile $profile)
     {
         $this->name = $name;
         $this->queue = $queue;

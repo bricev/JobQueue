@@ -11,17 +11,17 @@ interface ExecutableJob extends LoggerAwareInterface
      *
      * @param Task $task
      */
-    public function setUp(Task $task): void;
+    public function setUp(Task $task);
 
     /**
      *
      * @param Task $task
      */
-    public function perform(Task $task): void;
+    public function perform(Task $task);
 
     /**
      *
      * @param Task $task
      */
-    public function tearDown(Task $task): void;
+    public function tearDown(Task $task);
 }

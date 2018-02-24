@@ -9,7 +9,7 @@ interface Queue
      *
      * @param Task $task
      */
-    public function add(Task $task): void;
+    public function add(Task $task);
 
     /**
      * Fetches a task from the queue (FIFO)
@@ -33,7 +33,7 @@ interface Queue
      * @param Task   $task
      * @param Status $status
      */
-    public function updateStatus(Task $task, Status $status): void;
+    public function updateStatus(Task $task, Status $status);
 
     /**
      * Lists tasks
@@ -46,14 +46,20 @@ interface Queue
     public function dump(Profile $profile = null, Status $status = null, string $orderBy = 'status'): array;
 
     /**
+     *
+     * @param string $identifier
+     */
+    public function delete(string $identifier);
+
+    /**
      * Deletes all tasks
      *
      */
-    public function flush(): void;
+    public function flush();
 
     /**
      * Sets all tasks to `waiting` status
      *
      */
-    public function restore(): void;
+    public function restore();
 }
