@@ -1,11 +1,11 @@
 <?php
 
-namespace JobQueue\Tests;
+namespace JobQueue\Tests\Utils;
 
 use JobQueue\Domain\Job\AbstractJob;
 use JobQueue\Domain\Task\Task;
 
-final class DummyJob extends AbstractJob
+final class ComplexTOSnakeCASE extends AbstractJob
 {
     /**
      *
@@ -13,6 +13,6 @@ final class DummyJob extends AbstractJob
      */
     function perform(Task $task): void
     {
-        $this->log('Dummy done done! Very successful! Much ended');
+        $this->log('This job has a name that is complex to convert to snake case');
     }
 }

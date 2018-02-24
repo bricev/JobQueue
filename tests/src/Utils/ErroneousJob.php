@@ -1,6 +1,6 @@
 <?php
 
-namespace JobQueue\Tests;
+namespace JobQueue\Tests\Utils;
 
 use JobQueue\Domain\Job\AbstractJob;
 use JobQueue\Domain\Task\Task;
