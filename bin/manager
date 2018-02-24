@@ -5,12 +5,19 @@ require __DIR__.'/../vendor/autoload.php';
 
 use JobQueue\Application\Manager;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\ListCommand;
+
+$manCommand = new ListCommand;
+$manCommand->setName('man');
 
 $application = new Application;
+$application->add($manCommand);
 $application->add(new Manager\ListTasks);
 $application->add(new Manager\AddTask);
 $application->add(new Manager\ShowTask);
 $application->add(new Manager\EditTask);
 $application->add(new Manager\RestoreTasks);
 $application->add(new Manager\FlushTasks);
+$application->setDefaultCommand('man');
 $application->run();
+
