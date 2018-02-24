@@ -36,7 +36,7 @@ final class FlushTasks extends Command
             $question = new ConfirmationQuestion('Do you want to delete all tasks from the queue? (y/f) ', false);
             if (!$helper->ask($input, $output, $question)) {
                 $output->writeln('Canceled');
-                return;
+                return 0;
             }
         }
 

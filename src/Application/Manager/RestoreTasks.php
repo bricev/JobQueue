@@ -36,7 +36,7 @@ final class RestoreTasks extends Command
             $question = new ConfirmationQuestion('Do you want to set all tasks to "waiting" status? (y/f) ', false);
             if (!$helper->ask($input, $output, $question)) {
                 $output->writeln('Canceled');
-                return;
+                return 0;
             }
         }
 
