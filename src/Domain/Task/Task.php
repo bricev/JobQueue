@@ -120,6 +120,10 @@ final class Task implements \Serializable, \JsonSerializable
                 $match = $match == strtoupper($match) ? strtolower($match) : lcfirst($match);
             }
 
+            if ('job' !== $lmatch = array_pop($matches[0])) {
+                $matches[0] = $lmatch;
+            }
+
             return implode('_', $matches[0]);
         }
 
