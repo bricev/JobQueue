@@ -42,14 +42,14 @@ final class Consume extends Command
         $worker = new Worker(
             $name = $input->getOption('name') ?: Uuid::uuid4(),
             $services->queue,
-            new Profile($input->getArgument('profile'))
+            $profile = new Profile($input->getArgument('profile'))
         );
 
         if (isset($services->logger)) {
             $worker->setLogger($services->logger);
         }
 
-        $this->formatInfoSection(sprintf('Worker %s is running...', $name), $output);
+        $this->formatInfoSection(sprintf('Worker %s handles "%s" tasks...', $name, $profile), $output);
 
         $worker->consume($quantity = (int) $input->getOption('quantity') ?: null);
 

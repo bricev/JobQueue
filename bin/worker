@@ -3,10 +3,6 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use JobQueue\Application\Worker\Consume;
-use Symfony\Component\Console\Application;
+use JobQueue\Application\Worker\Worker;
 
-$application = new Application;
-$application->add(new Consume);
-$application->setDefaultCommand('list');
-$application->run();
+(new Worker())->run();
