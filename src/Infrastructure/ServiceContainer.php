@@ -9,6 +9,7 @@ use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 /**
+ * The following services have to be set in /config/services_{env}.yml :
  *
  * @property \JobQueue\Domain\Task\Queue $queue
  * @property \Psr\Log\LoggerInterface $logger
@@ -47,8 +48,9 @@ final class ServiceContainer
         }
 
         $root = realpath(dirname(dirname(__DIR__)));
-        $cache = sprintf('%s/cache/services.php', $root);
-        if (is_readable($cache)) {
+
+        $cache = sprintf('%s/cache/services_%s.php', $root, Environment::getName());
+        if (Environment::isProd() and is_readable($cache)) {
             // Retrieve services from the cache, if exists...
             require_once $cache;
             $services = new \ProjectServiceContainer;
@@ -58,15 +60,18 @@ final class ServiceContainer
             $services = new ContainerBuilder;
 
             $loader = new YamlFileLoader($services, new FileLocator);
-            $loader->load(sprintf('%s/config/services.yml', $root));
+            $loader->load(sprintf('%s/config/services_%s.yml', $root, Environment::getName()));
 
-            $services->compile(true);
+            // Compile and cache production config
+            if (Environment::isProd()) {
+                $services->compile(true);
 
-            if (!is_dir($cacheDir = dirname($cache))) {
-                mkdir($cacheDir, 0777);
+                if (!is_dir($cacheDir = dirname($cache))) {
+                    mkdir($cacheDir, 0777);
+                }
+
+                file_put_contents($cache, (new PhpDumper($services))->dump());
             }
-
-            file_put_contents($cache, (new PhpDumper($services))->dump());
         }
 
         return self::$instance = new self($services);

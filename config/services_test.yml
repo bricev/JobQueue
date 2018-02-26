@@ -1,0 +1,12 @@
+parameters:
+  redis_dsn: tcp://127.0.0.1:6379
+
+services:
+  predis:
+    class: \Predis\Client
+    arguments: ['%redis_dsn%']
+
+  queue:
+    public: true
+    class: \JobQueue\Infrastructure\RedisQueue
+    arguments: ['@predis']
