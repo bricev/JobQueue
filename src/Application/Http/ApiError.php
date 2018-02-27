@@ -18,9 +18,10 @@ final class ApiError implements RequestHandlerInterface
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $error = $request->getAttribute('error'); /** @var HttpErrorException $error */
+        $error = $error->getPrevious() ?: $error;
 
         $body = [
-            'message' => $error->getPrevious()->getMessage(),
+            'message' => $error->getMessage(),
             'code' => 400,
         ];
 
