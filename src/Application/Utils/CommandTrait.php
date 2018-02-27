@@ -4,7 +4,7 @@ namespace JobQueue\Application\Utils;
 
 use JobQueue\Domain\Task\Task;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
-use Symfony\Component\Console\Helper\FormatterHelper;
+use Symfony\Component\Console\Helper\HelperInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 trait CommandTrait
@@ -37,7 +37,7 @@ trait CommandTrait
      * @param OutputInterface $output
      */
     private function formatSection(string $text, string $type, OutputInterface $output): void {
-        $formatter = $this->getHelper('formatter');
+        $formatter = $this->getHelper('formatter'); /** @var \Symfony\Component\Console\Helper\FormatterHelper $formatter */
 
         $block = $formatter->formatSection($type, $text, $type);
 
@@ -131,7 +131,7 @@ EOL;
 
     /**
      *
-     * @return FormatterHelper
+     * @return HelperInterface
      */
-    abstract public function getHelper($name): FormatterHelper;
+    abstract public function getHelper($name): HelperInterface;
 }

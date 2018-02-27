@@ -32,7 +32,7 @@ final class RestoreTasks extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (!$input->getOption('force')) {
-            $helper = $this->getHelper('question');
+            $helper = $this->getHelper('question'); /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
             $question = new ConfirmationQuestion('Do you want to set all tasks to "waiting" status? (y/f) ', false);
             if (!$helper->ask($input, $output, $question)) {
                 $output->writeln('Canceled');
