@@ -96,7 +96,7 @@ final class RedisQueue implements Queue
      */
     public function updateStatus(Task $task, Status $status)
     {
-        if ((string) $status === $task->getStatus()) {
+        if ((string) $status === (string) $task->getStatus()) {
             return;
         }
 
