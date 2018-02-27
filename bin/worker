@@ -3,6 +3,6 @@
 
 require __DIR__.'/../vendor/autoload.php';
 
-use JobQueue\Application\Worker\Worker;
+use JobQueue\Application\Worker\Console;
 
-(new Worker())->run();
+(new Console())->run();

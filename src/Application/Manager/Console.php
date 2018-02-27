@@ -5,7 +5,7 @@ namespace JobQueue\Application\Manager;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\ListCommand;
 
-final class Manager extends Application
+final class Console extends Application
 {
     public function __construct()
     {

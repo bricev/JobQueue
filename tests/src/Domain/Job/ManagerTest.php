@@ -2,7 +2,7 @@
 
 namespace JobQueue\Tests\Application\Console;
 
-use JobQueue\Application\Manager\Manager;
+use JobQueue\Application\Manager\Console;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Infrastructure\ServiceContainer;
 use PHPUnit\Framework\TestCase;
@@ -12,14 +12,14 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class ManagerTest extends TestCase
 {
     /**
-     *
-     * @var Manager
+
+     * @var Console
      */
     private static $manager;
 
     public static function setUpBeforeClass()
     {
-        self::$manager = new Manager;
+        self::$manager = new Console;
     }
 
     /**
