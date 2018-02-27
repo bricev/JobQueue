@@ -40,7 +40,7 @@ final class Consume extends Command
         $services = ServiceContainer::getInstance();
 
         $worker = new Worker(
-            $name = $input->getOption('name') ?: Uuid::uuid4(),
+            $name = $input->getOption('name') ?: (string) Uuid::uuid4(),
             $services->queue,
             $profile = new Profile($input->getArgument('profile'))
         );
@@ -53,7 +53,7 @@ final class Consume extends Command
 
         $worker->consume($quantity = (int) $input->getOption('quantity') ?: null);
 
-        if ($quantity) {
+        if ($quantity > 0) {
             $this->formatInfoSection(sprintf('Worker %s is done.', $name), $output);
         } else {
             $this->formatErrorSection(sprintf('Worker %s has hanged out!', $name), $output);

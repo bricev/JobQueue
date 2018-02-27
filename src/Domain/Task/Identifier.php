@@ -18,7 +18,7 @@ final class Identifier
      */
     public function __construct(string $value = null)
     {
-        $this->value = $value ?: Uuid::uuid4();
+        $this->value = $value ?: (string) Uuid::uuid4();
     }
 
     /**
