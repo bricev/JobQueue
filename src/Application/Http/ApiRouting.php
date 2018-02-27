@@ -17,9 +17,10 @@ final class ApiRouting
     public static function createFromCache(string $dir, bool $disable = false): Dispatcher
     {
         return cachedDispatcher(function (RouteCollector $r) {
-            $r->get('/tasks', new ListTasks);
-            $r->post('/tasks', new AddTask);
-            $r->get('/task/{identifier}', new ShowTask);
+
+             $r->get( '/tasks',             ListTasks::class );
+            $r->post( '/tasks',             AddTask::class   );
+             $r->get( '/task/{identifier}', ShowTask::class  );
 
         }, [
             'cacheFile' => $dir,
