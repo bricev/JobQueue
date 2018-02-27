@@ -18,6 +18,7 @@ Read bellow for more documentation.
 ## Configuration
 
 - PHP 7.1 must be installed
+- Redis must be installed (for queue data persistence)
 - the environment variable `JOBQUEUE_ENV` may be set as `dev`, `prod` (or any string, default if not set: `dev`)
 - a config file should be stored in the `config/services_{JOBQUEUE_ENV}` dir (the following template may be used: `config/services_dev.yml.template`)
 - see Symfony dependency injection component [documentation](https://symfony.com/doc/current/components/dependency_injection.html) if you need help about the `service_*.yml` configuration
@@ -181,9 +182,9 @@ A web server should be configured to serve `public/index.php` as a router script
 __List all tasks:__
 ```
 GET /tasks
-  profile: string (a profile name that filters tasks)
-  status: waiting|running|finished|failed (a status that filters tasks)
-  order: date|profile|status (sort order, default: status)
+profile: string (a profile name that filters tasks)
+status: waiting|running|finished|failed (a status that filters tasks)
+order: date|profile|status (sort order, default: status)
 ```
 
 Returns an array of tasks:
