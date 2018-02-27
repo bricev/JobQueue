@@ -11,7 +11,7 @@ final class ComplexTOSnakeCASEJob extends AbstractJob
      *
      * @param Task $task
      */
-    function perform(Task $task)
+    public function perform(Task $task)
     {
         $this->log('This job has a name that is complex to convert to snake case');
     }

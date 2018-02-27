@@ -200,7 +200,7 @@ final class Task implements \Serializable, \JsonSerializable
      *
      * @return array
      */
-    function jsonSerialize(): array
+    public function jsonSerialize(): array
     {
         return [
             'identifier' => (string) $this->identifier,

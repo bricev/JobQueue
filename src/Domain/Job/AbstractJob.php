@@ -20,7 +20,7 @@ abstract class AbstractJob implements ExecutableJob
      *
      * @param Task $task
      */
-    abstract function perform(Task $task);
+    abstract public function perform(Task $task);
 
     /**
      *
