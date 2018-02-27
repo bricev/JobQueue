@@ -1,6 +1,10 @@
 PHP JobQueue component
 ======================
 
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/bricev/JobQueue/badges/quality-score.png?b=v2)](https://scrutinizer-ci.com/g/bricev/JobQueue/?branch=v2)
+[![Code Coverage](https://scrutinizer-ci.com/g/bricev/JobQueue/badges/coverage.png?b=v2)](https://scrutinizer-ci.com/g/bricev/JobQueue/?branch=v2)
+[![Build Status](https://scrutinizer-ci.com/g/bricev/JobQueue/badges/build.png?b=v2)](https://scrutinizer-ci.com/g/bricev/JobQueue/build-status/v2)
+
 Simple Job/Queue PHP component to help applications distribute Tasks through
 multiple workers.
 
