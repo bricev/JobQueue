@@ -1,4 +1,5 @@
 /.idea
 /cache
+/config/services_*.yml
 /tests/reporting
 /vendor
