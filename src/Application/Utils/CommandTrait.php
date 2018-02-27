@@ -133,5 +133,5 @@ EOL;
      *
      * @return HelperInterface
      */
-    abstract public function getHelper($name): HelperInterface;
+    abstract public function getHelper($name);
 }
