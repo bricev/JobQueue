@@ -47,7 +47,15 @@ final class ServiceContainer
             return self::$instance;
         }
 
-        $root = realpath(dirname(dirname(__DIR__)));
+        if (class_exists('\Composer\Autoload\ClassLoader')) {
+            // Find config dir using composer ClassLoader class
+            $reflection = new \ReflectionClass(\Composer\Autoload\ClassLoader::class);
+            $root = dirname(dirname(dirname($reflection->getFileName())));
+
+        } else {
+            // If composer has net been user, try to guess the root path
+            $root = dirname(dirname(__DIR__));
+        }
 
         $cache = sprintf('%s/cache/services_%s.php', $root, Environment::getName());
         if (Environment::isProd() and is_readable($cache)) {
