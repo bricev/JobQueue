@@ -1,5 +1,5 @@
 {
-    "name": "libcast-transcoding/jobqueue",
+    "name": "bricev/jobqueue",
     "type": "library",
     "description": "JobQueue lists Tasks that bear Jobs which are executed by Workers",
     "homepage": "https://github.com/bricev/JobQueue",
