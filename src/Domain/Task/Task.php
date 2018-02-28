@@ -144,6 +144,16 @@ final class Task implements \Serializable, \JsonSerializable
 
     /**
      *
+     * @param string $name
+     * @return bool
+     */
+    public function hasParameter(string $name): bool
+    {
+        return isset($this->parameters[$name]);
+    }
+
+    /**
+     *
      * @return array
      */
     public function getParameters(): array
