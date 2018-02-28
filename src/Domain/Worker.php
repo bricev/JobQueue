@@ -84,11 +84,21 @@ final class Worker implements LoggerAwareInterface
                 $this->queue->updateStatus($task, new Status(Status::FINISHED));
 
             } catch (\Exception $e) {
+                // Report error to logger if exists
+                if ($this->logger) {
+                    $this->logger->error($e->getMessage(), [
+                        'worker' => $this->getName(),
+                        'profile' => (string) $task->getProfile(),
+                        'job' => $task->getJobName(true),
+                    ]);
+                }
+
+                // Mark task as failed
                 $this->queue->updateStatus($task, new Status(Status::FAILED));
             }
 
+            // Exit worker if a quantity has been set
             $i++;
-
             if ($quantity === $i) {
                 break;
             }
