@@ -24,8 +24,9 @@ Read bellow for more documentation.
 - PHP 7.1 must be installed
 - Redis must be installed (for queue data persistence)
 - the environment variable `JOBQUEUE_ENV` may be set as `dev`, `prod` (or any string, default if not set: `dev`)
-- a config file should be stored in the `config/services_{JOBQUEUE_ENV}` dir (the following template may be used: `config/services_dev.yml.template`)
-- see Symfony dependency injection component [documentation](https://symfony.com/doc/current/components/dependency_injection.html) if you need help about the `service_*.yml` configuration
+- a config file `services_{JOBQUEUE_ENV}.yml` must be stored in the `config/` dir:
+  - the following template may be used: `config/services_dev.yml.template`
+  - see Symfony dependency injection component [documentation](https://symfony.com/doc/current/components/dependency_injection.html) if you need help about the `service_*.yml` configuration
 
 ## Usage
 
