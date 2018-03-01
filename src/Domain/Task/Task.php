@@ -62,8 +62,8 @@ final class Task implements \Serializable, \JsonSerializable
                 throw new \RuntimeException('All parameters must be named with a string key');
             }
 
-            if (!is_scalar($value) or !is_null($value)) {
-                throw new \RuntimeException(sprintf('Parameter %s must be a scalar or null'));
+            if (!is_scalar($value) and !is_null($value)) {
+                throw new \RuntimeException(sprintf('Parameter %s must be a scalar or null', $name));
             }
         }
         $this->parameters = $parameters;

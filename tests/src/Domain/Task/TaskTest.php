@@ -9,6 +9,67 @@ use PHPUnit\Framework\TestCase;
 
 final class TaskTest extends TestCase
 {
+    public function testBadParameterName()
+    {
+        $this->expectExceptionMessage('All parameters must be named with a string key');
+
+        $task = new Task(
+            new Profile('test'),
+            new Job\DummyJob,
+            [
+                'foo' => 'bar',
+                'bar' => 'baz',
+                2 => 'foo',
+            ]
+        );
+    }
+
+    public function testNonScalarParameterValue()
+    {
+        $this->expectExceptionMessage('Parameter array must be a scalar or null');
+
+        $task = new Task(
+            new Profile('test'),
+            new Job\DummyJob,
+            [
+                'int' => 123,
+                'string' => 'foobar',
+                'null' => null,
+                'bool' => true,
+                'array' => [],
+            ]
+        );
+    }
+
+    public function testParameterGetter()
+    {
+        $task = new Task(
+            new Profile('test'),
+            new Job\DummyJob,
+            [
+                'foo' => 'bar',
+                'bar' => 'baz',
+            ]
+        );
+
+        $this->assertTrue($task->hasParameter('foo'));
+    }
+
+    public function testNonExistentParameterGetter()
+    {
+        $this->expectExceptionMessage('Parameter "foo" does not exists');
+
+        $task = new Task(
+            new Profile('test'),
+            new Job\DummyJob,
+            [
+                'bar' => 'baz',
+            ]
+        );
+
+        $task->getParameter('foo');
+    }
+
     public function testSerialization()
     {
         $task = new Task(
