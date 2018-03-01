@@ -55,6 +55,17 @@ final class Task implements \Serializable, \JsonSerializable
         $this->profile = $profile;
         $this->jobName = get_class($job);
         $this->createdAt = time();
+
+        // Check that parameters are key/values
+        foreach ($parameters as $name => $value) {
+            if (!is_string($name)) {
+                throw new \RuntimeException('All parameters must be named with a string key');
+            }
+
+            if (!is_scalar($value) or !is_null($value)) {
+                throw new \RuntimeException(sprintf('Parameter %s must be a scalar or null'));
+            }
+        }
         $this->parameters = $parameters;
     }
 
@@ -164,14 +175,15 @@ final class Task implements \Serializable, \JsonSerializable
     /**
      *
      * @param string $name
-     * @param mixed  $default
      * @return mixed
      */
-    public function getParameter(string $name, $default = null)
+    public function getParameter(string $name)
     {
-        return isset($this->parameters[$name])
-            ? $this->parameters[$name]
-            : $default;
+        if (!$this->hasParameter($name)) {
+            throw new \RuntimeException(sprintf('Parameter "%s" does not exists', $name));
+        }
+
+        return $this->parameters[$name];
     }
 
     /**
