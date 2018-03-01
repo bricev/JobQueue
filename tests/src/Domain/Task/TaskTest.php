@@ -28,7 +28,7 @@ final class TaskTest extends TestCase
     {
         $this->expectExceptionMessage('Parameter array must be a scalar or null');
 
-        $task = new Task(
+        new Task(
             new Profile('test'),
             new Job\DummyJob,
             [
