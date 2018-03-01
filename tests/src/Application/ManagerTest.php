@@ -1,6 +1,6 @@
 <?php
 
-namespace JobQueue\Tests\Application\Console;
+namespace JobQueue\Tests\Application;
 
 use JobQueue\Application\Manager\Console;
 use JobQueue\Domain\Task\Status;
