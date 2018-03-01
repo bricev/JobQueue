@@ -13,7 +13,7 @@ final class TaskTest extends TestCase
     {
         $this->expectExceptionMessage('All parameters must be named with a string key');
 
-        $task = new Task(
+        new Task(
             new Profile('test'),
             new Job\DummyJob,
             [
