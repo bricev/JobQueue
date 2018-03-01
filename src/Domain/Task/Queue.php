@@ -7,9 +7,9 @@ interface Queue
     /**
      * Adds a task to the queue
      *
-     * @param Task $task
+     * @param Task[] ...$tasks
      */
-    public function add(Task $task);
+    public function add(Task ...$tasks);
 
     /**
      * Fetches a task from the queue (FIFO)

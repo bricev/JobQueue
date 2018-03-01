@@ -37,12 +37,14 @@ final class RedisQueue implements Queue
 
     /**
      *
-     * @param Task $task
+     * @param Task[] ...$tasks
      */
-    public function add(Task $task)
+    public function add(Task ...$tasks)
     {
-        $this->predis->set($this->getKey($task), serialize($task));
-        $this->predis->lpush($this->getTaskList($task), $task->getIdentifier());
+        foreach ($tasks as $task) {
+            $this->predis->set($this->getKey($task), serialize($task));
+            $this->predis->lpush($this->getTaskList($task), $task->getIdentifier());
+        }
     }
 
     /**
