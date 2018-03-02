@@ -11,7 +11,7 @@ final class TaskTest extends TestCase
 {
     public function testBadParameterName()
     {
-        $this->expectExceptionMessage('All parameters must be named with a string key');
+        $this->expectExceptionMessage('The key must be a string');
 
         new Task(
             new Profile('test'),
@@ -26,7 +26,7 @@ final class TaskTest extends TestCase
 
     public function testNonScalarParameterValue()
     {
-        $this->expectExceptionMessage('Parameter array must be a scalar or null');
+        $this->expectExceptionMessage('The "erroneous" value must be a scalar or null');
 
         new Task(
             new Profile('test'),
@@ -36,7 +36,7 @@ final class TaskTest extends TestCase
                 'string' => 'foobar',
                 'null' => null,
                 'bool' => true,
-                'array' => [],
+                'erroneous' => [],
             ]
         );
     }
@@ -57,7 +57,7 @@ final class TaskTest extends TestCase
 
     public function testNonExistentParameterGetter()
     {
-        $this->expectExceptionMessage('Parameter "foo" does not exists');
+        $this->expectExceptionMessage('There is no value for "foo" key');
 
         $task = new Task(
             new Profile('test'),
