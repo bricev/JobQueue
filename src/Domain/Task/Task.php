@@ -3,7 +3,6 @@
 namespace JobQueue\Domain\Task;
 
 use JobQueue\Domain\Job\ExecutableJob;
-use JobQueue\Domain\KeyValueBag;
 
 final class Task implements \Serializable, \JsonSerializable
 {
@@ -38,25 +37,33 @@ final class Task implements \Serializable, \JsonSerializable
     private $createdAt;
 
     /**
-     *
-     * @var KeyValueBag
+
+     * @var ParameterBag
      */
     private $parameters;
+
+    /**
+
+     * @var TagBag
+     */
+    private $tags;
 
     /**
      *
      * @param Profile       $profile
      * @param ExecutableJob $job
      * @param array         $parameters
+     * @param array         $tags
      */
-    public function __construct(Profile $profile, ExecutableJob $job, array $parameters = [])
+    public function __construct(Profile $profile, ExecutableJob $job, array $parameters = [], array $tags = [])
     {
         $this->identifier = new Identifier;
         $this->status = new Status(Status::WAITING);
         $this->profile = $profile;
         $this->jobName = get_class($job);
         $this->createdAt = time();
-        $this->parameters = new KeyValueBag($parameters);
+        $this->parameters = new ParameterBag($parameters);
+        $this->tags = new TagBag($tags);
     }
 
     /**
@@ -174,6 +181,25 @@ final class Task implements \Serializable, \JsonSerializable
 
     /**
      *
+     * @param string $name
+     * @return bool
+     */
+    public function hasTag(string $name): bool
+    {
+        return isset($this->tags[$name]);
+    }
+
+    /**
+     *
+     * @return array
+     */
+    public function getTags(): array
+    {
+        return $this->tags->__toArray();
+    }
+
+    /**
+     *
      * @return string
      */
     public function serialize(): string
@@ -185,6 +211,7 @@ final class Task implements \Serializable, \JsonSerializable
             $this->jobName,
             $this->createdAt,
             $this->parameters->__toArray(),
+            $this->tags->__toArray(),
         ]);
     }
 
@@ -201,7 +228,8 @@ final class Task implements \Serializable, \JsonSerializable
         $this->profile = new Profile($array[2]);
         $this->jobName = $array[3];
         $this->createdAt = $array[4];
-        $this->parameters = new KeyValueBag($array[5]);
+        $this->parameters = new ParameterBag($array[5]);
+        $this->tags = new TagBag($array[6]);
     }
 
     /**
@@ -217,6 +245,7 @@ final class Task implements \Serializable, \JsonSerializable
             'job'        => $this->jobName,
             'date'       => $this->getCreatedAt('r'),
             'parameters' => $this->parameters->__toArray(),
+            'tags'       => $this->tags->__toArray(),
         ];
     }
 
