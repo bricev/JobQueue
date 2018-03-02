@@ -78,4 +78,15 @@ final class WorkerTest extends TestCase
 
         $this->assertEquals((string) $task->getStatus(), Status::FAILED);
     }
+
+    public static function tearDownAfterClass()
+    {
+        ServiceContainer::getInstance()
+            ->queue
+            ->delete((string) self::$testTask->getIdentifier());
+
+        ServiceContainer::getInstance()
+            ->queue
+            ->delete((string) self::$erroneousTask->getIdentifier());
+    }
 }
