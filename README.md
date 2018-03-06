@@ -92,7 +92,7 @@ The `\Psr\Log\LoggerAwareTrait` can be used to easily add a logger setter and be
 ### Defining a task
 
 Creating a `task` requires the following elements:
-- a `profile` - it can be anything, it regroups tasks into queue partitions, and the JobQueue `worker` app can consume tasks from one (only) profile
+- a `profile` - it can be anything, it regroups tasks into queue partitions, so that the JobQueue `worker` app can consume tasks from one (only) profile
 - a `job` - which holds the code that has to be executed for the task
 - optional `parameters` that can be used by the job during its execution 
 
