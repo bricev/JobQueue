@@ -83,7 +83,7 @@ This [documentation](https://github.com/php-fig/fig-standards/blob/master/accept
 
 Tip: Package `psr/log` ([repo](https://github.com/php-fig/log)) can be added to a composer project by running this command:
 ```
-composer require bricev/jobqueue
+composer require psr/log
 ```
 
 The `\Psr\Log\LoggerAwareTrait` can be used to easily add a logger setter and be compliant with the `LoggerAwareInterface`.
