@@ -158,6 +158,8 @@ See the next section for `worker` usage.
 
 ## CLI
 
+Those features require the proper configuration, see `Configuration` section above.
+
 The `manager` app can be used to perform CRUD operations on tasks.
 
 Usage:
@@ -180,7 +182,9 @@ The `worker` app can be used as an OS service (eg. upstart, systemd... on unix) 
 
 ### Configuration
 
-A web server should be configured to serve `public/index.php` as a router script
+A web server should be configured to serve `public/index.php` as a router script.
+This feature requires the proper configuration, see `Configuration` section above.
+
 
 ### API
 
@@ -289,7 +293,9 @@ Errors:
 
 ## Tests
 
-To run tests, use the following command:
+First, a local instance of Redis must run.
+
+Then, to run tests, use the following command:
  ```
  vendor/bin/phpunit
  ```
