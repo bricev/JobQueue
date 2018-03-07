@@ -27,11 +27,14 @@ abstract class Bag implements \Countable, \SeekableIterator, \Serializable, \Jso
      */
     public function seek($key)
     {
-        if (!isset($this->data[$key])) {
+        if ($key >= count($this->data)) {
             throw new \OutOfBoundsException;
         }
 
-        return $key;
+        $this->rewind();
+        for ($i=0; $i<$key; $i++) {
+            $this->next();
+        }
     }
 
     /**
