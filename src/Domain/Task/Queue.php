@@ -36,14 +36,15 @@ interface Queue
     public function updateStatus(Task $task, Status $status);
 
     /**
-     * Lists tasks
+     * Lists tasks according to criteria
      *
      * @param Profile $profile
      * @param Status  $status
+     * @param array   $tags
      * @param string  $orderBy
      * @return Task[]
      */
-    public function dump(Profile $profile = null, Status $status = null, string $orderBy = 'status'): array;
+    public function search(Profile $profile = null, Status $status = null, array $tags = [], string $orderBy = 'status'): array;
 
     /**
      *

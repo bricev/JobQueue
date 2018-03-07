@@ -131,13 +131,14 @@ final class RedisQueue implements Queue
 
     /**
      *
-     * @param Profile $profile
-     * @param Status  $status
-     * @param string  $orderBy
+     * @param Profile|null $profile
+     * @param Status|null  $status
+     * @param array        $tags
+     * @param string       $orderBy
      * @return Task[]
      * @throws \Exception
      */
-    public function dump(Profile $profile = null, Status $status = null, string $orderBy = 'date'): array
+    public function search(Profile $profile = null, Status $status = null, array $tags = [], string $orderBy = 'date'): array
     {
         if (!in_array($orderBy, ['date', 'profile', 'status'])) {
             throw new \Exception(sprintf('Impossible to order by "%s"', $orderBy));
@@ -146,6 +147,7 @@ final class RedisQueue implements Queue
         // List all tasks
         $tasks = [];
         foreach (new Keyspace($this->predis, $this->getKey()) as $key) {
+
             $task = unserialize($this->predis->get($key)); /** @var Task $task */
 
             if ($profile and (string) $profile !== (string) $task->getProfile()) {
@@ -154,6 +156,13 @@ final class RedisQueue implements Queue
 
             if ($status and (string) $status !== (string) $task->getStatus()) {
                 continue;
+            }
+
+            if (!empty($tags)) {
+                // Check that the task has at least one tag
+                if (empty(array_intersect($tags, $task->getTags()))) {
+                    continue;
+                }
             }
 
             $tasks[] = [
@@ -208,7 +217,7 @@ final class RedisQueue implements Queue
 
     public function restore()
     {
-        $tasks = $this->dump();
+        $tasks = $this->search();
 
         $this->flush();
 

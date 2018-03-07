@@ -102,6 +102,9 @@ trait CommandTrait
 
             $paramString .= "$i) $name: $value \n";
         }
+        $paramString = $paramString ?: '(none)';
+
+        $tagString = $task->getTags() ? implode(', ', $task->getTags()) : '(none)';
 
         $text = <<<EOL
 - Identifier : {$task->getIdentifier()}
@@ -110,7 +113,8 @@ trait CommandTrait
   - Job name   : {$task->getJobName(true)} 
   - Profile    : {$task->getProfile()} 
   - Status     : {$task->getStatus()} 
-  - Parameters : $paramString
+  - Tags       : $tagString
+  - Parameters : $paramString 
 EOL;
 
         $this->formatBlock($text, 'info', $output);

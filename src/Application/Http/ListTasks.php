@@ -23,9 +23,10 @@ class ListTasks implements RequestHandlerInterface
 
         $tasks = ServiceContainer::getInstance()
             ->queue
-            ->dump(
+            ->search(
                 isset($queryParams['profile']) ? new Profile($queryParams['profile']) : null,
                 isset($queryParams['status']) ? new Status($queryParams['status']) : null,
+                isset($queryParams['tags']) ? (array) $queryParams['tags'] : [],
                 isset($queryParams['order']) ? $queryParams['order'] : 'status'
             );
 

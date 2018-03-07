@@ -30,16 +30,23 @@ final class ListTasks extends Command
      */
     private $status;
 
+    /**
+     *
+     * @var array
+     */
+    private $tags = [];
+
     public function configure()
     {
         $this
             ->setName('list')
             ->setDescription('Lists tasks')
             ->addOption('profile', 'p', InputOption::VALUE_OPTIONAL, 'Limits the listing to a profile')
-            ->addOption('status', 's', InputOption::VALUE_OPTIONAL, 'Limits the listing to a status')
-            ->addOption('order', 'o', InputOption::VALUE_REQUIRED, 'Orders tasks by "date", "profile" or "status"', 'status')
-            ->addOption('follow', 'f', InputOption::VALUE_NONE, 'Enables to keep tasks evolution on the console')
-            ->addOption('legend', 'l', InputOption::VALUE_NONE, 'Displays a legend for status labels at the list footer')
+            ->addOption('status',  's', InputOption::VALUE_OPTIONAL, 'Limits the listing to a status')
+            ->addOption('tags',    't', InputOption::VALUE_IS_ARRAY|InputOption::VALUE_OPTIONAL, 'Limits the listing to one or many (array) tags')
+            ->addOption('order',   'o', InputOption::VALUE_REQUIRED, 'Orders tasks by "date", "profile" or "status"', 'status')
+            ->addOption('follow',  'f', InputOption::VALUE_NONE, 'Enables to keep tasks evolution on the console')
+            ->addOption('legend',  'l', InputOption::VALUE_NONE, 'Displays a legend for status labels at the list footer')
         ;
     }
 
@@ -60,6 +67,10 @@ final class ListTasks extends Command
         $this->status = $input->getOption('status')
             ? new Status($input->getOption('status'))
             : null;
+
+        $this->tags = is_array($input->getOption('tags'))
+            ? $input->getOption('tags')
+            : [];
 
         // Clear screen for `follow` mode
         if ($follow = $input->getOption('follow')) {
@@ -94,8 +105,14 @@ final class ListTasks extends Command
                 $tasks = $this->addTableFooter($tasks, $output);
             }
 
+            $columns = ['Job', 'Profile', 'Date'];
+            foreach ($this->tags as $key => $tag) {
+                $columns[] = sprintf('T%d', $key + 1);
+            }
+            $columns[] = 'Identifier';
+
             (new Table($output))
-                ->setHeaders(['Job', 'Profile', 'Date', 'Identifier'])
+                ->setHeaders($columns)
                 ->setRows($tasks)
                 ->render()
             ;
@@ -125,7 +142,7 @@ final class ListTasks extends Command
         $previousSeparator = null;
         $queue = ServiceContainer::getInstance()->queue;
 
-        foreach ($queue->dump($this->profile, $this->status, $order) as $task) {
+        foreach ($queue->search($this->profile, $this->status, $this->tags, $order) as $task) {
             $status = (string) $task->getStatus();
             $profile = (string) $task->getProfile();
 
@@ -147,12 +164,20 @@ final class ListTasks extends Command
                 $tasks[] = new TableSeparator;
             }
 
-            $tasks[] = [
+            $taskData = [
                 sprintf('%s %s', $this->formatContent('■', $status, $output), $task->getJobName(true)),
                 $profile,
                 $task->getCreatedAt('Y-m-d H:i:s'),
-                $task->getIdentifier(),
             ];
+
+            // Add `tags` columns
+            foreach ($this->tags as $tag) {
+                $taskData[] = $task->hasTag($tag) ? ' ✔ ' : ' ✘ ';
+            }
+
+            $taskData[] = $task->getIdentifier();
+
+            $tasks[] = $taskData;
 
             $previousSeparator = $separator;
         }
@@ -173,11 +198,25 @@ final class ListTasks extends Command
             $legend[] = sprintf('%s %s', $this->formatContent('■', $status, $output), $status);
         }
 
+        $colspan = count(Status::listStatus()) + count($this->tags);
+
         $rows[] = new TableSeparator;
         $rows[] = [new TableCell(
             sprintf('Legend:   %s', implode('   ', $legend)),
-            ['colspan' => count(Status::listStatus())]
+            ['colspan' => $colspan]
         )];
+
+        if ($this->tags) {
+            $tags = [];
+            foreach ($this->tags as $key => $tag) {
+                $tags[] = sprintf('- T%s: tag "%s"', $key + 1, $tag);
+            }
+
+            $rows[] = [new TableCell(
+                sprintf("Tag(s): \n%s", implode("\n", $tags)),
+                ['colspan' => $colspan]
+            )];
+        }
 
         return $rows;
     }

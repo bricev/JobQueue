@@ -157,7 +157,7 @@ final class Task implements \Serializable, \JsonSerializable
      */
     public function hasParameter(string $name): bool
     {
-        return isset($this->parameters[$name]);
+        return $this->parameters->has($name);
     }
 
     /**
@@ -176,7 +176,7 @@ final class Task implements \Serializable, \JsonSerializable
      */
     public function getParameter(string $name)
     {
-        return $this->parameters[$name];
+        return $this->parameters->get($name);
     }
 
     /**
@@ -186,7 +186,7 @@ final class Task implements \Serializable, \JsonSerializable
      */
     public function hasTag(string $name): bool
     {
-        return isset($this->tags[$name]);
+        return $this->tags->has($name);
     }
 
     /**

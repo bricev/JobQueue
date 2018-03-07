@@ -34,7 +34,12 @@ class AddTask implements RequestHandlerInterface
             throw new \RuntimeException('Malformed parameters');
         }
 
-        $task = new Task($profile, $job, $parameters);
+        $tags = isset($body['tags']) ? $body['tags'] : [];
+        if (!is_array($tags)) {
+            throw new \RuntimeException('Malformed tags');
+        }
+
+        $task = new Task($profile, $job, $parameters, $tags);
 
         ServiceContainer::getInstance()
             ->queue
