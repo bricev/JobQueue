@@ -29,7 +29,7 @@ final class HttpTest extends TestCase
     public static function setUpBeforeClass()
     {
         $command = sprintf('%1$s -S localhost:8085 -t %2$s/public %2$s/public/index.php',
-            (new PhpExecutableFinder)->find(),
+            (new PhpExecutableFinder)->find() ?: 'php',
             dirname(dirname(dirname(realpath(__DIR__)))));
 
         self::$process = new Process($command);
