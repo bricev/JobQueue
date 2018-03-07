@@ -2,16 +2,16 @@
 
 namespace JobQueue\Domain;
 
+use JobQueue\Domain\Job\ExecutableJob;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Queue;
 use JobQueue\Domain\Task\Status;
+use JobQueue\Domain\Task\Task;
 use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 
 final class Worker implements LoggerAwareInterface
 {
-    use LoggerAwareTrait;
-
     /**
      *
      * @var string
@@ -29,6 +29,12 @@ final class Worker implements LoggerAwareInterface
      * @var Profile
      */
     private $profile;
+
+    /**
+     *
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      *
@@ -63,17 +69,31 @@ final class Worker implements LoggerAwareInterface
 
     /**
      *
+     * @param LoggerInterface $logger
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        if ($logger instanceof \Monolog\Logger) {
+            $profile = $this->getProfile();
+            $logger->pushProcessor(function ($record) use ($profile) {
+                $record['extra']['profile'] = $profile;
+                return $record;
+            });
+        }
+
+        $this->logger = $logger;
+    }
+
+    /**
+     *
      * @param int|null $quantity
      */
     public function consume(int $quantity = null)
     {
         $i = 0;
         while ($task = $this->queue->fetch($this->profile)) {
-            // Set up the job
-            $job = $task->getJob();
-            if ($this->logger) {
-                $job->setLogger($this->logger);
-            }
+            // Configure the job
+            $job = $this->getAndConfigureJob($task);
 
             try {
                 // Execute the job
@@ -103,5 +123,30 @@ final class Worker implements LoggerAwareInterface
                 break;
             }
         }
+    }
+
+    /**
+     *
+     * @param Task $task
+     * @return ExecutableJob
+     */
+    private function getAndConfigureJob(Task $task): ExecutableJob
+    {
+        $job = $task->getJob();
+
+        $logger = $this->logger;
+
+        if ($logger instanceof \Monolog\Logger) {
+            $logger->pushProcessor(function ($record) use ($task) {
+                $record['extra']['job'] = $task->getJobName(true);
+                return $record;
+            });
+        }
+
+        if (!is_null($logger)) {
+            $job->setLogger($logger);
+        }
+
+        return $job;
     }
 }
