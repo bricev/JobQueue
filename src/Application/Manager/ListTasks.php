@@ -206,7 +206,7 @@ final class ListTasks extends Command
             ['colspan' => $colspan]
         )];
 
-        if ($this->tags) {
+        if (!empty($this->tags)) {
             $tags = [];
             foreach ($this->tags as $key => $tag) {
                 $tags[] = sprintf('- T%s: tag "%s"', $key + 1, $tag);
