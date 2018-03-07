@@ -16,6 +16,12 @@ final class HttpTest extends TestCase
 {
     /**
      *
+     * @var string
+     */
+    public static $initialEnv;
+
+    /**
+     *
      * @var Process
      */
     public static $process;
@@ -28,7 +34,9 @@ final class HttpTest extends TestCase
 
     public static function setUpBeforeClass()
     {
-        $command = sprintf('%1$s -S localhost:8085 -t %2$s/public %2$s/public/index.php',
+        self::$initialEnv = getenv('JOBQUEUE_ENV');
+
+        $command = sprintf('JOBQUEUE_ENV=test && %1$s -S localhost:8085 -t %2$s/public %2$s/public/index.php',
             (new PhpExecutableFinder)->find(),
             dirname(dirname(dirname(realpath(__DIR__)))));
 
@@ -167,5 +175,9 @@ final class HttpTest extends TestCase
     public static function tearDownAfterClass()
     {
         self::$process->stop();
+
+        if (self::$initialEnv) {
+            putenv(sprintf('JOBQUEUE_ENV=%s', self::$initialEnv));
+        }
     }
 }
