@@ -3,8 +3,11 @@
 namespace JobQueue\Tests\Application;
 
 use JobQueue\Application\Manager\Console;
+use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Status;
+use JobQueue\Domain\Task\Task;
 use JobQueue\Infrastructure\ServiceContainer;
+use JobQueue\Tests\Domain\Job\DummyJob;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -32,7 +35,12 @@ final class ManagerTest extends TestCase
         $commandTester->execute([
             'command' => $command->getName(),
             'profile' => 'foo',
-            'job' => 'JobQueue\Tests\Domain\Job\DummyJob'
+            'job' => 'JobQueue\Tests\Domain\Job\DummyJob',
+            'parameters' => [
+                'param1:value1',
+                'param2:value2',
+            ],
+            '--tags' => ['tag1', 'tag2'],
         ], ['decorated' => false]);
 
         $uuidPattern = rtrim(ltrim(Uuid::VALID_PATTERN, '^'), '$');
@@ -55,7 +63,9 @@ final class ManagerTest extends TestCase
             'identifier' => $identifier,
         ], ['decorated' => false]);
 
-        $this->assertEquals(1, preg_match("/Identifier +: $identifier/", $commandTester->getDisplay(), $matches));
+        $this->assertEquals(1, preg_match("/Identifier +: $identifier/", $commandTester->getDisplay()), 'Missing identifier');
+        $this->assertEquals(1, preg_match('/Parameters +: 1\) param1: value1/', $commandTester->getDisplay()), 'Missing parameter');
+        $this->assertEquals(1, preg_match('/Tags +: tag1/', $commandTester->getDisplay()), 'Missing tag');
     }
 
     /**
@@ -70,7 +80,55 @@ final class ManagerTest extends TestCase
             'command' => $command->getName(),
         ], ['decorated' => false]);
 
-        $this->assertEquals(1, preg_match("/$identifier/", $commandTester->getDisplay(), $matches));
+        $this->assertEquals(1, preg_match("/$identifier/", $commandTester->getDisplay()), 'Missing identifier');
+    }
+
+    /**
+     *
+     * @depends testAddCommand
+     * @param string $identifier
+     */
+    public function testListCommandWithTagFilter(string $identifier): string
+    {
+        $queue = ServiceContainer::getInstance()->queue;
+        $queue->add(new Task(
+            new Profile('test'),
+            new DummyJob,
+            [], ['foo', 'bar']
+        ), $task2 = new Task(
+            new Profile('test2'),
+            new DummyJob,
+            [], ['bar', 'baz']
+        ));
+
+        $commandTester = new CommandTester($command = self::$manager->get('list'));
+        $commandTester->execute([
+            'command' => $command->getName(),
+            '--tags' => ['tag1'],
+            '--legend' => true,
+        ], ['decorated' => false]);
+
+        $this->assertEquals(1, preg_match("/$identifier/", $commandTester->getDisplay()), 'Missing identifier');
+        $this->assertEquals(1, preg_match('/T1: tag "tag1"/', $commandTester->getDisplay()), 'Missing tag legend');
+
+        return (string) $task2->getIdentifier();
+    }
+
+    /**
+     *
+     * @depends testListCommandWithTagFilter
+     * @param string $identifier
+     */
+    public function testListCommandWithProfileFilter(string $identifier)
+    {
+        $commandTester = new CommandTester($command = self::$manager->get('list'));
+        $commandTester->execute([
+            'command' => $command->getName(),
+            '--profile' => 'test2',
+            '--legend' => true,
+        ], ['decorated' => false]);
+
+        $this->assertEquals(1, preg_match("/$identifier/", $commandTester->getDisplay()), 'Missing identifier');
     }
 
     /**
@@ -87,8 +145,8 @@ final class ManagerTest extends TestCase
             'status' => $status = Status::FINISHED,
         ], ['decorated' => false]);
 
-        $this->assertEquals(1, preg_match("/Identifier +: $identifier/", $commandTester->getDisplay(), $matches));
-        $this->assertEquals(1, preg_match("/Status +: $status/", $commandTester->getDisplay(), $matches));
+        $this->assertEquals(1, preg_match("/Identifier +: $identifier/", $commandTester->getDisplay()), 'Missing identifier');
+        $this->assertEquals(1, preg_match("/Status +: $status/", $commandTester->getDisplay()), 'Missing status');
     }
 
     /**
@@ -105,7 +163,7 @@ final class ManagerTest extends TestCase
 
         $tasks = ServiceContainer::getInstance()
             ->queue
-            ->dump();
+            ->search();
 
         foreach ($tasks as $task) {
             $this->assertEquals(Status::WAITING, (string) $task->getStatus());
@@ -126,7 +184,7 @@ final class ManagerTest extends TestCase
 
         $tasks = ServiceContainer::getInstance()
             ->queue
-            ->dump();
+            ->search();
 
         $this->assertTrue(empty($tasks));
     }
