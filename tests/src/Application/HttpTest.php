@@ -16,12 +16,6 @@ final class HttpTest extends TestCase
 {
     /**
      *
-     * @var string
-     */
-    public static $initialEnv;
-
-    /**
-     *
      * @var Process
      */
     public static $process;
@@ -34,9 +28,7 @@ final class HttpTest extends TestCase
 
     public static function setUpBeforeClass()
     {
-        self::$initialEnv = getenv('JOBQUEUE_ENV');
-
-        $command = sprintf('JOBQUEUE_ENV=test && %1$s -S localhost:8085 -t %2$s/public %2$s/public/index.php',
+        $command = sprintf('%1$s -S localhost:8085 -t %2$s/public %2$s/public/index.php',
             (new PhpExecutableFinder)->find(),
             dirname(dirname(dirname(realpath(__DIR__)))));
 
@@ -134,7 +126,6 @@ final class HttpTest extends TestCase
             )
         ]);
         $this->assertEquals(200, $task1Response->getStatusCode());
-        $task1 = json_decode($task1Response->getBody(), true);
 
         $task2Response = self::$client->post('/tasks', [
             'json' => new Task(
@@ -149,7 +140,6 @@ final class HttpTest extends TestCase
             )
         ]);
         $this->assertEquals(200, $task2Response->getStatusCode());
-        $task2 = json_decode($task2Response->getBody(), true);
 
         $tasksResponse = self::$client->get('/tasks');
         $this->assertEquals(200, $tasksResponse->getStatusCode());
@@ -157,16 +147,9 @@ final class HttpTest extends TestCase
 
         $this->assertEquals(3, count($tasks));
 
-        $identifiers = [
-            $task1['identifier'],
-            $task2['identifier'],
-        ];
-        $this->assertTrue(in_array($tasks[1]['identifier'], $identifiers));
-        $this->assertTrue(in_array($tasks[2]['identifier'], $identifiers));
-
         $profiles = [
-            $task1['profile'],
-            $task2['profile'],
+            'profile1',
+            'profile2',
         ];
         $this->assertTrue(in_array($tasks[1]['profile'], $profiles));
         $this->assertTrue(in_array($tasks[2]['profile'], $profiles));
@@ -175,9 +158,5 @@ final class HttpTest extends TestCase
     public static function tearDownAfterClass()
     {
         self::$process->stop();
-
-        if (self::$initialEnv) {
-            putenv(sprintf('JOBQUEUE_ENV=%s', self::$initialEnv));
-        }
     }
 }
