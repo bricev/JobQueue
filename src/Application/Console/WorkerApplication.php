@@ -4,7 +4,7 @@ namespace JobQueue\Application\Console;
 
 use Symfony\Component\Console\Application;
 
-final class Worker extends Application
+final class WorkerApplication extends Application
 {
     public function __construct()
     {

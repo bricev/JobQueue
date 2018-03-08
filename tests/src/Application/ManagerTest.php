@@ -2,7 +2,7 @@
 
 namespace JobQueue\Tests\Application;
 
-use JobQueue\Application\Console\Manager;
+use JobQueue\Application\Console\ManagerApplication;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Domain\Task\Task;
@@ -15,13 +15,13 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class ManagerTest extends TestCase
 {
     /**
- * @var Manager
+ * @var ManagerApplication
      */
     private static $manager;
 
     public static function setUpBeforeClass()
     {
-        self::$manager = new Manager;
+        self::$manager = new ManagerApplication;
     }
 
     /**
