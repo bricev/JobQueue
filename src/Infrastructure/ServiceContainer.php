@@ -9,13 +9,15 @@ use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 /**
+ * This class may be extended to make extra services usable to jobs from workers.
+ *
  * The following services have to be set in /config/services_{env}.yml :
  *
  * @property \Symfony\Component\EventDispatcher\EventDispatcher $dispatcher
  * @property \Psr\Log\LoggerInterface $logger
  * @property \JobQueue\Domain\Task\Queue $queue
  */
-final class ServiceContainer
+class ServiceContainer
 {
     /**
      *
