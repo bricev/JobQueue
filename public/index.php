@@ -20,7 +20,7 @@ $response = (new Relay([
 
     new JsonPayload,
 
-    new FastRoute(ApiRouting::createFromCache("$root/cache/routing.php")),
+    new FastRoute(ApiRouting::create()),
 
     new RequestHandler,
 

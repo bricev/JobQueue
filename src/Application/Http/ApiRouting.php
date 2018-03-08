@@ -11,21 +11,33 @@ final class ApiRouting
 {
     /**
      *
-     * @param string $dir
-     * @param bool   $disable
      * @return Dispatcher
      */
-    public static function createFromCache(string $dir, bool $disable = false): Dispatcher
+    public static function create(): Dispatcher
     {
-        return cachedDispatcher(function (RouteCollector $r) {
-
-             $r->get( '/tasks',             ListTasks::class );
+        return cachedDispatcher(function (RouteCollector $r)
+        {
+            $r->get(  '/tasks',             ListTasks::class );
             $r->post( '/tasks',             AddTask::class   );
-             $r->get( '/task/{identifier}', ShowTask::class  );
+            $r->get(  '/task/{identifier}', ShowTask::class  );
 
         }, [
-            'cacheFile' => $dir,
+            'cacheFile' => self::getRoutingCachePath(),
             'cacheDisabled' => !Environment::isProd(),
         ]);
+    }
+
+    /**
+     *
+     * @return string
+     */
+    private static function getRoutingCachePath(): string
+    {
+        // Get dir path from environment variables
+        if (!$dir = getenv('JOBQUEUE_CACHE_PATH')) {
+            $dir = sys_get_temp_dir();
+        }
+
+        return sprintf('%s/jobqueue_routing.php', $dir);
     }
 }
