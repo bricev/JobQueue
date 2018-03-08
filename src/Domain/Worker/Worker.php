@@ -90,7 +90,7 @@ final class Worker implements LoggerAwareInterface
 
         $i = 0;
         while ($task = $this->queue->fetch($this->profile)) {
-            $this->dispatcher->dispatch(TaskWasFetched::NAME, new TaskWasFetched($task, $this->queue));
+            $this->dispatcher->dispatch(TaskWasFetched::NAME, new TaskWasFetched($task));
 
             // Exit worker if a quantity has been set
             $i++;
