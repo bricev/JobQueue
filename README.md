@@ -153,8 +153,36 @@ $queue->add($task);
 ```
 
 The task's job will be executed as soon as a worker starts consuming the task's profile.
-See the next section for `worker` usage.
+This component embeds a PHP executable worker. 
+See the `CLI` section to get more details about its usage.
 
+
+### Worker events
+
+The worker emits some events that can be listened to:
+
+| Event name | Description | Event attributes |
+| --- | --- | --- |
+| `worker.start` | Fired on worker launch | $event->getWorker() |
+| `worker.finished` | Fired once the worker has finished running | $event->getWorker() |
+| `task.fetched` | Fired each time a task is fetched from queue by the worker | $event->getTask() |
+| `task.executed` | Fired when a task's job execution has been successful done | $event->getTask() |
+| `task.failed` | Fired when a task's job execution fails | $event->getTask() |
+
+To intercept an event, you can use the `EventDispatcher` from the service container:
+```php
+<?php
+
+use JobQueue\Infrastructure\ServiceContainer;
+
+$dispatcher = ServiceContainer::getInstance()->dispatcher;
+$dispatcher->addListener('task.failed', function ($event) {
+    /** @var \JobQueue\Domain\Task\TaskHasFailed $event */
+    $task = $event->getTask();
+    // Do something...
+});
+
+```
 
 ## CLI
 
