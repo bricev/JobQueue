@@ -42,7 +42,8 @@ final class Consume extends Command
         $worker = new Worker(
             $name = $input->getOption('name') ?: (string) Uuid::uuid4(),
             $services->queue,
-            $profile = new Profile($input->getArgument('profile'))
+            $profile = new Profile($input->getArgument('profile')),
+            $services->dispatcher
         );
 
         if (isset($services->logger)) {

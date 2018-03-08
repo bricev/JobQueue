@@ -2,16 +2,20 @@
 
 namespace JobQueue\Domain\Worker;
 
-use JobQueue\Domain\Job\ExecutableJob;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Queue;
-use JobQueue\Domain\Task\Status;
-use JobQueue\Domain\Task\Task;
+use JobQueue\Domain\Task\TaskHandler;
+use JobQueue\Domain\Task\TaskWasFetched;
+use JobQueue\Domain\Task\WorkerHasFinished;
+use JobQueue\Domain\Task\WorkerWasStarted;
 use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareTrait;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 final class Worker implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      *
      * @var string
@@ -32,21 +36,23 @@ final class Worker implements LoggerAwareInterface
 
     /**
      *
-     * @var LoggerInterface
+     * @var EventDispatcher
      */
-    protected $logger;
+    protected $dispatcher;
 
     /**
      *
-     * @param         $name
-     * @param Queue   $queue
-     * @param Profile $profile
+     * @param string          $name
+     * @param Queue           $queue
+     * @param Profile         $profile
+     * @param EventDispatcher $dispatcher
      */
-    public function __construct(string $name, Queue $queue, Profile $profile)
+    public function __construct(string $name, Queue $queue, Profile $profile, EventDispatcher $dispatcher)
     {
         $this->name = $name;
         $this->queue = $queue;
         $this->profile = $profile;
+        $this->dispatcher = $dispatcher;
     }
 
     /**
@@ -69,53 +75,22 @@ final class Worker implements LoggerAwareInterface
 
     /**
      *
-     * @param LoggerInterface $logger
-     */
-    public function setLogger(LoggerInterface $logger)
-    {
-        if ($logger instanceof \Monolog\Logger) {
-            $profile = $this->getProfile();
-            $logger->pushProcessor(function ($record) use ($profile) {
-                $record['extra']['profile'] = $profile;
-                return $record;
-            });
-        }
-
-        $this->logger = $logger;
-    }
-
-    /**
-     *
-     * @param int|null $quantity
+     * @param int|null $quantity Number of tasks to handle
      */
     public function consume(int $quantity = null)
     {
+        $this->dispatcher->dispatch(WorkerWasStarted::NAME, new WorkerWasStarted($this));
+
+        // Set up the Task handler which subscribe to tasks domain events
+        $taskHandler = new TaskHandler($this->queue, $this->dispatcher);
+        if ($this->logger) {
+            $taskHandler->setLogger($this->logger);
+        }
+        $this->dispatcher->addSubscriber($taskHandler);
+
         $i = 0;
         while ($task = $this->queue->fetch($this->profile)) {
-            // Configure the job
-            $job = $this->getAndConfigureJob($task);
-
-            try {
-                // Execute the job
-                $job->setUp($task);
-                $job->perform($task);
-                $job->tearDown($task);
-
-                $this->queue->updateStatus($task, new Status(Status::FINISHED));
-
-            } catch (\Exception $e) {
-                // Report error to logger if exists
-                if ($this->logger) {
-                    $this->logger->error($e->getMessage(), [
-                        'worker' => $this->getName(),
-                        'profile' => (string) $task->getProfile(),
-                        'job' => $task->getJobName(true),
-                    ]);
-                }
-
-                // Mark task as failed
-                $this->queue->updateStatus($task, new Status(Status::FAILED));
-            }
+            $this->dispatcher->dispatch(TaskWasFetched::NAME, new TaskWasFetched($task, $this->queue));
 
             // Exit worker if a quantity has been set
             $i++;
@@ -123,30 +98,7 @@ final class Worker implements LoggerAwareInterface
                 break;
             }
         }
-    }
 
-    /**
-     *
-     * @param Task $task
-     * @return ExecutableJob
-     */
-    private function getAndConfigureJob(Task $task): ExecutableJob
-    {
-        $job = $task->getJob();
-
-        $logger = $this->logger;
-
-        if ($logger instanceof \Monolog\Logger) {
-            $logger->pushProcessor(function ($record) use ($task) {
-                $record['extra']['job'] = $task->getJobName(true);
-                return $record;
-            });
-        }
-
-        if (!is_null($logger)) {
-            $job->setLogger($logger);
-        }
-
-        return $job;
+        $this->dispatcher->dispatch(WorkerHasFinished::NAME, new WorkerHasFinished($this));
     }
 }

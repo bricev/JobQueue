@@ -11,8 +11,9 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 /**
  * The following services have to be set in /config/services_{env}.yml :
  *
- * @property \JobQueue\Domain\Task\Queue $queue
+ * @property \Symfony\Component\EventDispatcher\EventDispatcher $dispatcher
  * @property \Psr\Log\LoggerInterface $logger
+ * @property \JobQueue\Domain\Task\Queue $queue
  */
 final class ServiceContainer
 {

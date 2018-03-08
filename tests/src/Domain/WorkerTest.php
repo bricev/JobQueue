@@ -11,6 +11,7 @@ use JobQueue\Infrastructure\RedisQueue;
 use JobQueue\Tests\Domain\Job;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 final class QueueTest extends TestCase
 {
@@ -55,7 +56,7 @@ final class QueueTest extends TestCase
      */
     public function testConsumeFIFOTask(): Worker
     {
-        $worker = new Worker('test', self::$queue, new Profile('test'));
+        $worker = new Worker('test', self::$queue, new Profile('test'), new EventDispatcher);
         $worker->consume(1);
 
         $task = self::$queue->find((string) self::$testTask->getIdentifier());

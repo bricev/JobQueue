@@ -2,7 +2,7 @@
 
 namespace JobQueue\Tests\Application;
 
-use JobQueue\Application\Worker\Console;
+use JobQueue\Application\Console\Worker;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Domain\Task\Task;
@@ -33,7 +33,7 @@ final class WorkerTest extends TestCase
 
     public static function setUpBeforeClass()
     {
-        self::$worker = new Console;
+        self::$worker = new Worker;
 
         self::$testTask = new Task(new Profile('test'), new Job\DummyJob);
         self::$erroneousTask = new Task(new Profile('test'), new Job\ErroneousJob);

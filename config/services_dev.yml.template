@@ -10,3 +10,7 @@ services:
     public: true
     class: \JobQueue\Infrastructure\RedisQueue
     arguments: ['@predis']
+
+  dispatcher:
+    public: true
+    class: \Symfony\Component\EventDispatcher\EventDispatcher
