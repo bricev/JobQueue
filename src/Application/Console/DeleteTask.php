@@ -1,23 +1,24 @@
 <?php
 
-namespace JobQueue\Application\Manager;
+namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
+use JobQueue\Domain\Task\Status;
 use JobQueue\Infrastructure\ServiceContainer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-final class ShowTask extends Command
+final class DeleteTask extends Command
 {
     use CommandTrait;
 
     public function configure()
     {
         $this
-            ->setName('show')
-            ->setDescription('Show a task information')
+            ->setName('delete')
+            ->setDescription('Delete a task')
             ->addArgument('identifier', InputArgument::REQUIRED, 'Task UUID identifier')
         ;
     }
@@ -30,11 +31,13 @@ final class ShowTask extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $queue = ServiceContainer::getInstance()->queue;
+        $identifier = $input->getArgument('identifier');
 
-        $task = $queue->find($input->getArgument('identifier'));
+        ServiceContainer::getInstance()
+            ->queue
+            ->delete($identifier);
 
-        $this->formatTaskBlock($task, $output);
+        $this->formatInfoSection(sprintf('Task %s deleted', $identifier), $output);
 
         return 0;
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace JobQueue\Application\Manager;
+namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Domain\Task\Profile;

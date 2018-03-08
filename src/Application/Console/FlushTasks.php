@@ -1,6 +1,6 @@
 <?php
 
-namespace JobQueue\Application\Manager;
+namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Infrastructure\ServiceContainer;
@@ -10,15 +10,15 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 
-final class RestoreTasks extends Command
+final class FlushTasks extends Command
 {
     use CommandTrait;
 
     public function configure()
     {
         $this
-            ->setName('restore')
-            ->setDescription('Sets all tasks to "waiting" status (useful after a crash)')
+            ->setName('flush')
+            ->setDescription('Deletes all tasks from the queue')
             ->addOption('force', 'y', InputOption::VALUE_NONE, 'Skip validation')
         ;
     }
@@ -33,7 +33,7 @@ final class RestoreTasks extends Command
     {
         if (!$input->getOption('force')) {
             $helper = $this->getHelper('question'); /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
-            $question = new ConfirmationQuestion('Do you want to set all tasks to "waiting" status? (y/f) ', false);
+            $question = new ConfirmationQuestion('Do you want to delete all tasks from the queue? (y/f) ', false);
             if (!$helper->ask($input, $output, $question)) {
                 $output->writeln('Canceled');
                 return 0;
@@ -42,9 +42,9 @@ final class RestoreTasks extends Command
 
         ServiceContainer::getInstance()
             ->queue
-            ->restore();
+            ->flush();
 
-        $this->formatInfoSection('Queue restored', $output);
+        $this->formatInfoSection('Queue flushed', $output);
 
         return 0;
     }

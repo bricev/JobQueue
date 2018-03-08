@@ -1,6 +1,6 @@
 <?php
 
-namespace JobQueue\Application\Manager;
+namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Domain\Task\Status;
@@ -10,16 +10,17 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-final class DeleteTask extends Command
+final class EditTask extends Command
 {
     use CommandTrait;
 
     public function configure()
     {
         $this
-            ->setName('delete')
-            ->setDescription('Delete a task')
+            ->setName('edit')
+            ->setDescription('Edit a task status')
             ->addArgument('identifier', InputArgument::REQUIRED, 'Task UUID identifier')
+            ->addArgument('status', InputArgument::REQUIRED, 'The new status')
         ;
     }
 
@@ -31,13 +32,13 @@ final class DeleteTask extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $identifier = $input->getArgument('identifier');
+        $queue = ServiceContainer::getInstance()->queue;
 
-        ServiceContainer::getInstance()
-            ->queue
-            ->delete($identifier);
+        $task = $queue->find($input->getArgument('identifier'));
 
-        $this->formatInfoSection(sprintf('Task %s deleted', $identifier), $output);
+        $queue->updateStatus($task, new Status($input->getArgument('status')));
+
+        $this->formatTaskBlock($task, $output);
 
         return 0;
     }
