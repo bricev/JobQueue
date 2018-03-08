@@ -1,5 +1,5 @@
 /.idea
+/cache
+/config/services_*.yml
+/tests/reporting
 /vendor
-/example/log
-/log
-/composer.phar
