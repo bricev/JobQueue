@@ -4,7 +4,7 @@ namespace JobQueue\Application\Worker;
 
 use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Domain\Task\Profile;
-use JobQueue\Domain\Worker;
+use JobQueue\Domain\Worker\Worker;
 use JobQueue\Infrastructure\ServiceContainer;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Command\Command;

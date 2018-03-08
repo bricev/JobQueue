@@ -1,6 +1,6 @@
 <?php
 
-namespace JobQueue\Domain;
+namespace JobQueue\Domain\Worker;
 
 use JobQueue\Domain\Job\ExecutableJob;
 use JobQueue\Domain\Task\Profile;

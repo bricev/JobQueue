@@ -6,7 +6,7 @@ use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Queue;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Domain\Task\Task;
-use JobQueue\Domain\Worker;
+use JobQueue\Domain\Worker\Worker;
 use JobQueue\Infrastructure\RedisQueue;
 use JobQueue\Tests\Domain\Job;
 use PHPUnit\Framework\TestCase;
