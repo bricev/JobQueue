@@ -4,15 +4,29 @@ namespace JobQueue\Tests\Application;
 
 use JobQueue\Application\Console\WorkerApplication;
 use JobQueue\Domain\Task\Profile;
+use JobQueue\Domain\Task\Queue;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Domain\Task\Task;
 use JobQueue\Infrastructure\ServiceContainer;
 use JobQueue\Tests\Domain\Job;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class WorkerTest extends TestCase
 {
+    /**
+     *
+     * @var Queue
+     */
+    private static $queue;
+
+    /**
+     *
+     * @var EventDispatcherInterface
+     */
+    private static $eventDispatcher;
+
     /**
      *
      * @var
@@ -33,14 +47,13 @@ final class WorkerTest extends TestCase
 
     public static function setUpBeforeClass()
     {
-        self::$worker = new WorkerApplication;
+        self::$queue = ServiceContainer::getInstance()->queue;
+        self::$eventDispatcher = ServiceContainer::getInstance()->dispatcher;
+        self::$worker = new WorkerApplication(self::$queue, self::$eventDispatcher);
 
         self::$testTask = new Task(new Profile('test'), new Job\DummyJob);
         self::$erroneousTask = new Task(new Profile('test'), new Job\ErroneousJob);
-
-        ServiceContainer::getInstance()
-            ->queue
-            ->add(self::$testTask, self::$erroneousTask);
+        self::$queue->add(self::$testTask, self::$erroneousTask);
     }
 
     public function testConsume()

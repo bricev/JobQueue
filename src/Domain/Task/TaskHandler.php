@@ -4,7 +4,7 @@ namespace JobQueue\Domain\Task;
 
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 final class TaskHandler implements EventSubscriberInterface, LoggerAwareInterface
@@ -19,19 +19,19 @@ final class TaskHandler implements EventSubscriberInterface, LoggerAwareInterfac
 
     /**
      *
-     * @var EventDispatcher
+     * @var EventDispatcherInterface
      */
-    private $dispatcher;
+    private $eventDispatcher;
 
     /**
-     *
-     * @param Queue           $queue
-     * @param EventDispatcher $dispatcher
+
+     * @param Queue                    $queue
+     * @param EventDispatcherInterface $eventDispatcher
      */
-    public function __construct(Queue $queue, EventDispatcher $dispatcher)
+    public function __construct(Queue $queue, EventDispatcherInterface $eventDispatcher)
     {
         $this->queue = $queue;
-        $this->dispatcher = $dispatcher;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -80,10 +80,10 @@ final class TaskHandler implements EventSubscriberInterface, LoggerAwareInterfac
             $job->perform($task);
             $job->tearDown($task);
 
-            $this->dispatcher->dispatch(TaskWasExecuted::NAME, new TaskWasExecuted($task));
+            $this->eventDispatcher->dispatch(TaskWasExecuted::NAME, new TaskWasExecuted($task));
 
         } catch (\Exception $e) {
-            $this->dispatcher->dispatch(TaskHasFailed::NAME, new TaskHasFailed($task));
+            $this->eventDispatcher->dispatch(TaskHasFailed::NAME, new TaskHasFailed($task));
         }
     }
 

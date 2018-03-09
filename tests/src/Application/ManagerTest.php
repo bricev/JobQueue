@@ -4,6 +4,7 @@ namespace JobQueue\Tests\Application;
 
 use JobQueue\Application\Console\ManagerApplication;
 use JobQueue\Domain\Task\Profile;
+use JobQueue\Domain\Task\Queue;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Domain\Task\Task;
 use JobQueue\Infrastructure\ServiceContainer;
@@ -15,13 +16,21 @@ use Symfony\Component\Console\Tester\CommandTester;
 final class ManagerTest extends TestCase
 {
     /**
- * @var ManagerApplication
+     *
+     * @var Queue
+     */
+    private static $queue;
+
+    /**
+     *
+     * @var
      */
     private static $manager;
 
     public static function setUpBeforeClass()
     {
-        self::$manager = new ManagerApplication;
+        self::$queue = ServiceContainer::getInstance()->queue;
+        self::$manager = new ManagerApplication(self::$queue);
     }
 
     /**
@@ -89,8 +98,7 @@ final class ManagerTest extends TestCase
      */
     public function testListCommandWithTagFilter(string $identifier): string
     {
-        $queue = ServiceContainer::getInstance()->queue;
-        $queue->add(new Task(
+        self::$queue->add(new Task(
             new Profile('test'),
             new DummyJob,
             [], ['foo', 'bar']
@@ -160,9 +168,7 @@ final class ManagerTest extends TestCase
             '--force' => true,
         ], ['decorated' => false]);
 
-        $tasks = ServiceContainer::getInstance()
-            ->queue
-            ->search();
+        $tasks = self::$queue->search();
 
         foreach ($tasks as $task) {
             $this->assertEquals(Status::WAITING, (string) $task->getStatus());
@@ -181,9 +187,7 @@ final class ManagerTest extends TestCase
             '--force' => true,
         ], ['decorated' => false]);
 
-        $tasks = ServiceContainer::getInstance()
-            ->queue
-            ->search();
+        $tasks = self::$queue->search();
 
         $this->assertTrue(empty($tasks));
     }

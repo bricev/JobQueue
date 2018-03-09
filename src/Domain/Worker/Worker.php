@@ -8,7 +8,7 @@ use JobQueue\Domain\Task\TaskHandler;
 use JobQueue\Domain\Task\TaskWasFetched;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class Worker implements LoggerAwareInterface
 {
@@ -34,23 +34,23 @@ final class Worker implements LoggerAwareInterface
 
     /**
      *
-     * @var EventDispatcher
+     * @var EventDispatcherInterface
      */
-    protected $dispatcher;
+    protected $eventDispatcher;
 
     /**
      *
-     * @param string          $name
-     * @param Queue           $queue
-     * @param Profile         $profile
-     * @param EventDispatcher $dispatcher
+     * @param string                   $name
+     * @param Queue                    $queue
+     * @param Profile                  $profile
+     * @param EventDispatcherInterface $eventDispatcher
      */
-    public function __construct(string $name, Queue $queue, Profile $profile, EventDispatcher $dispatcher)
+    public function __construct(string $name, Queue $queue, Profile $profile, EventDispatcherInterface $eventDispatcher)
     {
         $this->name = $name;
         $this->queue = $queue;
         $this->profile = $profile;
-        $this->dispatcher = $dispatcher;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -77,18 +77,18 @@ final class Worker implements LoggerAwareInterface
      */
     public function consume(int $quantity = null)
     {
-        $this->dispatcher->dispatch(WorkerWasStarted::NAME, new WorkerWasStarted($this));
+        $this->eventDispatcher->dispatch(WorkerWasStarted::NAME, new WorkerWasStarted($this));
 
         // Set up the Task handler which subscribe to tasks domain events
-        $taskHandler = new TaskHandler($this->queue, $this->dispatcher);
+        $taskHandler = new TaskHandler($this->queue, $this->eventDispatcher);
         if ($this->logger) {
             $taskHandler->setLogger($this->logger);
         }
-        $this->dispatcher->addSubscriber($taskHandler);
+        $this->eventDispatcher->addSubscriber($taskHandler);
 
         $i = 0;
         while ($task = $this->queue->fetch($this->profile)) {
-            $this->dispatcher->dispatch(TaskWasFetched::NAME, new TaskWasFetched($task));
+            $this->eventDispatcher->dispatch(TaskWasFetched::NAME, new TaskWasFetched($task));
 
             // Exit worker if a quantity has been set
             $i++;
@@ -97,6 +97,6 @@ final class Worker implements LoggerAwareInterface
             }
         }
 
-        $this->dispatcher->dispatch(WorkerHasFinished::NAME, new WorkerHasFinished($this));
+        $this->eventDispatcher->dispatch(WorkerHasFinished::NAME, new WorkerHasFinished($this));
     }
 }

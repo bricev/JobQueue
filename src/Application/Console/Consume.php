@@ -4,18 +4,48 @@ namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Domain\Task\Profile;
+use JobQueue\Domain\Task\Queue;
 use JobQueue\Domain\Worker\Worker;
-use JobQueue\Infrastructure\ServiceContainer;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-final class Consume extends Command
+final class Consume extends Command implements LoggerAwareInterface
 {
     use CommandTrait;
+    use LoggerAwareTrait;
+
+    /**
+     *
+     * @var Queue
+     */
+    private $queue;
+
+    /**
+     *
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
+    /**
+     *
+     * @param Queue                    $queue
+     * @param EventDispatcherInterface $eventDispatcher
+     * @param string                   $name
+     */
+    public function __construct(Queue $queue, EventDispatcherInterface $eventDispatcher, string $name = null)
+    {
+        $this->queue = $queue;
+        $this->eventDispatcher = $eventDispatcher;
+
+        parent::__construct($name);
+    }
 
     public function configure()
     {
@@ -37,17 +67,15 @@ final class Consume extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $services = ServiceContainer::getInstance();
-
         $worker = new Worker(
             $name = $input->getOption('name') ?: (string) Uuid::uuid4(),
-            $services->queue,
+            $this->queue,
             $profile = new Profile($input->getArgument('profile')),
-            $services->dispatcher
+            $this->eventDispatcher
         );
 
-        if (isset($services->logger)) {
-            $worker->setLogger($services->logger);
+        if ($this->logger) {
+            $worker->setLogger($this->logger);
         }
 
         $this->formatInfoSection(sprintf('Worker %s handles "%s" tasks...', $name, $profile), $output);

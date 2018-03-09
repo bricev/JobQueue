@@ -3,14 +3,12 @@
 namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
-use JobQueue\Domain\Task\Status;
 use JobQueue\Infrastructure\ServiceContainer;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
-final class DeleteTask extends Command
+final class DeleteTask extends ManagerCommand
 {
     use CommandTrait;
 

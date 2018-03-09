@@ -4,5 +4,15 @@
 require __DIR__.'/../vendor/autoload.php';
 
 use JobQueue\Application\Console\WorkerApplication;
+use JobQueue\Infrastructure\ServiceContainer;
 
-(new WorkerApplication())->run();
+$worker = (new WorkerApplication(
+    ServiceContainer::getInstance()->queue,
+    ServiceContainer::getInstance()->dispatcher
+));
+
+if (isset(ServiceContainer::getInstance()->logger)) {
+    $worker->setLogger(ServiceContainer::getInstance()->logger);
+}
+
+$worker->run();

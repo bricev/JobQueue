@@ -4,5 +4,8 @@
 require __DIR__.'/../vendor/autoload.php';
 
 use JobQueue\Application\Console\ManagerApplication;
+use JobQueue\Infrastructure\ServiceContainer;
 
-(new ManagerApplication)->run();
+$queue = ServiceContainer::getInstance()->queue;
+
+(new ManagerApplication($queue))->run();

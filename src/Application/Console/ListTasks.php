@@ -6,7 +6,6 @@ use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Infrastructure\ServiceContainer;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Helper\TableSeparator;
@@ -14,7 +13,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-final class ListTasks extends Command
+final class ListTasks extends ManagerCommand
 {
     use CommandTrait;
 
