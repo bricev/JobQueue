@@ -34,7 +34,7 @@ final class ApiRouting
     private static function getRoutingCachePath(): string
     {
         // Get dir path from environment variables
-        if (!$dir = getenv('JOBQUEUE_CACHE_PATH')) {
+        if (!$dir = (string) getenv('JOBQUEUE_CACHE_PATH')) {
             $dir = sys_get_temp_dir();
         }
 

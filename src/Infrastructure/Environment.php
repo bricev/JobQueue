@@ -33,10 +33,7 @@ class Environment
             return self::$name;
         }
 
-        $env = getenv('JOBQUEUE_ENV') ?: 'dev';
-        if (is_array($env)) {
-            $env = array_shift($env);
-        }
+        $env = (string) getenv('JOBQUEUE_ENV') ?: 'dev';
 
         return self::$name = $env;
     }
