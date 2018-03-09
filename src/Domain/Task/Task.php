@@ -26,9 +26,9 @@ final class Task implements \Serializable, \JsonSerializable
 
     /**
      *
-     * @var string
+     * @var ExecutableJob
      */
-    private $jobName;
+    private $job;
 
     /**
      *
@@ -60,7 +60,7 @@ final class Task implements \Serializable, \JsonSerializable
         $this->identifier = new Identifier;
         $this->status = new Status(Status::WAITING);
         $this->profile = $profile;
-        $this->jobName = get_class($job);
+        $this->job = $job;
         $this->createdAt = time();
         $this->parameters = new ParameterBag($parameters);
         $this->tags = new TagBag($tags);
@@ -108,7 +108,7 @@ final class Task implements \Serializable, \JsonSerializable
      */
     public function getJob(): ExecutableJob
     {
-        return new $this->jobName;
+        return $this->job;
     }
 
     /**
@@ -118,8 +118,10 @@ final class Task implements \Serializable, \JsonSerializable
      */
     public function getJobName(bool $humanReadable = false): string
     {
+        $jobName = get_class($this->job);
+
         if ($humanReadable) {
-            $name = explode('\\', $this->jobName);
+            $name = explode('\\', $jobName);
             $name = array_pop($name);
 
             // Convert CamelCase to snake_case
@@ -135,7 +137,7 @@ final class Task implements \Serializable, \JsonSerializable
             return implode('_', $matches[0]);
         }
 
-        return $this->jobName;
+        return $jobName;
     }
 
     /**
@@ -208,7 +210,7 @@ final class Task implements \Serializable, \JsonSerializable
             (string) $this->identifier,
             (string) $this->status,
             (string) $this->profile,
-            $this->jobName,
+            get_class($this->job),
             $this->createdAt,
             $this->parameters->__toArray(),
             $this->tags->__toArray(),
@@ -226,7 +228,7 @@ final class Task implements \Serializable, \JsonSerializable
         $this->identifier = new Identifier($array[0]);
         $this->status = new Status($array[1]);
         $this->profile = new Profile($array[2]);
-        $this->jobName = $array[3];
+        $this->job = new $array[3];
         $this->createdAt = $array[4];
         $this->parameters = new ParameterBag($array[5]);
         $this->tags = new TagBag($array[6]);
@@ -242,7 +244,7 @@ final class Task implements \Serializable, \JsonSerializable
             'identifier' => (string) $this->identifier,
             'status'     => (string) $this->status,
             'profile'    => (string) $this->profile,
-            'job'        => $this->jobName,
+            'job'        => get_class($this->job),
             'date'       => $this->getCreatedAt('r'),
             'parameters' => $this->parameters->__toArray(),
             'tags'       => $this->tags->__toArray(),

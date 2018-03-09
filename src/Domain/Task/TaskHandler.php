@@ -41,7 +41,10 @@ final class TaskHandler implements EventSubscriberInterface, LoggerAwareInterfac
     public static function getSubscribedEvents(): array
     {
         return [
-            TaskWasFetched::NAME  => 'onTaskFetched',
+            TaskWasFetched::NAME  => [
+                ['onTaskFetchedConfigureJob', 100],
+                ['onTaskFetchedExecuteJob', -100],
+            ],
             TaskWasExecuted::NAME => 'onTaskExecuted',
             TaskHasFailed::NAME   => 'onTaskFailed',
         ];
@@ -51,7 +54,7 @@ final class TaskHandler implements EventSubscriberInterface, LoggerAwareInterfac
      *
      * @param TaskWasFetched $event
      */
-    public function onTaskFetched(TaskWasFetched $event)
+    public function onTaskFetchedConfigureJob(TaskWasFetched $event)
     {
         $task = $event->getTask();
         $job = $task->getJob();
@@ -60,6 +63,16 @@ final class TaskHandler implements EventSubscriberInterface, LoggerAwareInterfac
         if ($this->logger) {
             $job->setLogger($this->logger);
         }
+    }
+
+    /**
+     *
+     * @param TaskWasFetched $event
+     */
+    public function onTaskFetchedExecuteJob(TaskWasFetched $event)
+    {
+        $task = $event->getTask();
+        $job = $task->getJob();
 
         try {
             // Execute the job
