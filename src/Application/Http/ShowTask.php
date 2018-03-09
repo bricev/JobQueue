@@ -2,13 +2,11 @@
 
 namespace JobQueue\Application\Http;
 
-use JobQueue\Infrastructure\ServiceContainer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use Zend\Diactoros\Response\JsonResponse;
 
-class ShowTask implements RequestHandlerInterface
+final class ShowTask extends BaseController
 {
     /**
      *
@@ -17,7 +15,7 @@ class ShowTask implements RequestHandlerInterface
      */
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $task = ServiceContainer::getInstance()
+        $task = $this
             ->queue
             ->find($request->getAttribute('identifier'));
 

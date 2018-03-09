@@ -4,13 +4,11 @@ namespace JobQueue\Application\Http;
 
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Task;
-use JobQueue\Infrastructure\ServiceContainer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use Zend\Diactoros\Response\JsonResponse;
 
-class AddTask implements RequestHandlerInterface
+final class AddTask extends BaseController
 {
     /**
      *
@@ -30,20 +28,12 @@ class AddTask implements RequestHandlerInterface
         }
 
         $parameters = isset($body['parameters']) ? $body['parameters'] : [];
-        if (!is_array($parameters)) {
-            throw new \RuntimeException('Malformed parameters');
-        }
 
         $tags = isset($body['tags']) ? $body['tags'] : [];
-        if (!is_array($tags)) {
-            throw new \RuntimeException('Malformed tags');
-        }
 
         $task = new Task($profile, $job, $parameters, $tags);
 
-        ServiceContainer::getInstance()
-            ->queue
-            ->add($task);
+        $this->queue->add($task);
 
         return new JsonResponse($task);
     }

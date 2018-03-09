@@ -4,13 +4,11 @@ namespace JobQueue\Application\Http;
 
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Status;
-use JobQueue\Infrastructure\ServiceContainer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use Zend\Diactoros\Response\JsonResponse;
 
-class ListTasks implements RequestHandlerInterface
+final class ListTasks extends BaseController
 {
     /**
      *
@@ -21,7 +19,7 @@ class ListTasks implements RequestHandlerInterface
     {
         $queryParams = $request->getQueryParams();
 
-        $tasks = ServiceContainer::getInstance()
+        $tasks = $this
             ->queue
             ->search(
                 isset($queryParams['profile']) ? new Profile($queryParams['profile']) : null,
