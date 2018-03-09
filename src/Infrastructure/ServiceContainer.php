@@ -9,7 +9,7 @@ use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 /**
- * This class may be extended to make extra services usable to jobs from workers.
+ * This class may be used to make extra services available to jobs from workers.
  *
  * The following services have to be set in /config/services_{env}.yml :
  *
@@ -21,7 +21,7 @@ class ServiceContainer
 {
     /**
      *
-     * @var self
+     * @var static
      */
     protected static $instance;
 
@@ -42,14 +42,25 @@ class ServiceContainer
 
     /**
      *
-     * @return ServiceContainer
+     * @return ServiceContainer|static
      */
-    public static function getInstance(): self
+    public static function getInstance(): static
     {
         if (self::$instance) {
             return self::$instance;
         }
 
+        $services = self::getServices();
+
+        return self::$instance = new static($services);
+    }
+
+    /**
+     *
+     * @return ContainerInterface
+     */
+    protected static function getServices(): ContainerInterface
+    {
         $cache = self::getConfigurationCachePath();
 
         if (Environment::isProd() and is_readable($cache)) {
@@ -76,7 +87,7 @@ class ServiceContainer
             }
         }
 
-        return self::$instance = new self($services);
+        return $services;
     }
 
     /**
