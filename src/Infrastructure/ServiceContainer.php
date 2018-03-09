@@ -94,7 +94,7 @@ class ServiceContainer
      *
      * @return string
      */
-    private static function getConfigurationFilePath(): string
+    protected static function getConfigurationFilePath(): string
     {
         // Get path from environment variables
         if ($path = (string) getenv('JOBQUEUE_CONFIG_PATH')) {
@@ -119,7 +119,7 @@ class ServiceContainer
      *
      * @return string
      */
-    private static function getConfigurationCachePath(): string
+    protected static function getConfigurationCachePath(): string
     {
         // Get dir path from environment variables
         if (!$dir = (string) getenv('JOBQUEUE_CACHE_PATH')) {
