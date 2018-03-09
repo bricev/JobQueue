@@ -6,8 +6,6 @@ use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Queue;
 use JobQueue\Domain\Task\TaskHandler;
 use JobQueue\Domain\Task\TaskWasFetched;
-use JobQueue\Domain\Task\WorkerHasFinished;
-use JobQueue\Domain\Task\WorkerWasStarted;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\EventDispatcher\EventDispatcher;

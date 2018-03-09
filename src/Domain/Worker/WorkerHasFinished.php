@@ -1,8 +1,7 @@
 <?php
 
-namespace JobQueue\Domain\Task;
+namespace JobQueue\Domain\Worker;
 
-use JobQueue\Domain\Worker\Worker;
 use Symfony\Component\EventDispatcher\Event;
 
 final class WorkerHasFinished extends Event
@@ -17,8 +16,7 @@ final class WorkerHasFinished extends Event
 
     /**
      *
-     * @param Task   $task
-     * @param Worker $worker
+     * @param \JobQueue\Domain\Worker\Worker $worker
      */
     public function __construct(Worker $worker)
     {
