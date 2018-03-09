@@ -42,9 +42,9 @@ class ServiceContainer
 
     /**
      *
-     * @return ServiceContainer|static
+     * @return static
      */
-    public static function getInstance(): static
+    public static function getInstance()
     {
         if (self::$instance) {
             return self::$instance;
