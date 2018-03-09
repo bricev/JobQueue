@@ -2,63 +2,44 @@
 
 namespace JobQueue\Tests\Application;
 
-use GuzzleHttp\Client;
+use JobQueue\Application\Http\AddTask;
+use JobQueue\Application\Http\ListTasks;
+use JobQueue\Application\Http\ShowTask;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Status;
 use JobQueue\Domain\Task\Task;
+use JobQueue\Infrastructure\ServiceContainer;
 use JobQueue\Tests\Domain\Job\DummyJob;
 use PHPUnit\Framework\TestCase;
 use Ramsey\Uuid\Uuid;
-use Symfony\Component\Process\PhpExecutableFinder;
-use Symfony\Component\Process\Process;
+use Zend\Diactoros\ServerRequest;
 
 final class HttpTest extends TestCase
 {
-    /**
-     *
-     * @var Process
-     */
-    public static $process;
-
-    /**
-     *
-     * @var Client
-     */
-    public static $client;
-
-    public static function setUpBeforeClass()
-    {
-        $command = sprintf('%1$s -S localhost:8085 -t %2$s/public %2$s/public/index.php',
-            (new PhpExecutableFinder)->find() ?: 'php',
-            dirname(dirname(dirname(realpath(__DIR__)))));
-
-        self::$process = new Process($command);
-        self::$process->start();
-
-        self::$client = new Client([
-            'base_uri' => 'http://localhost:8085',
-        ]);
-    }
-
     /**
      *
      * @return string
      */
     public function testAddTask(): string
     {
-        $response = self::$client->post('/tasks', [
-            'json' => new Task(
-                new Profile('profile1'),
-                new DummyJob,
-                [
-                    'param1' => 'value1',
-                    'param2' => 'value2',
-                ], [
-                    'tag1', 'tag2'
-                ]
-            )
-        ]);
+        $queue = ServiceContainer::getInstance()->queue;
 
+        $task = new Task(
+            new Profile('profile1'),
+            new DummyJob,
+            [
+                'param1' => 'value1',
+                'param2' => 'value2',
+            ], [
+                'tag1', 'tag2'
+            ]
+        );
+
+        $request = new ServerRequest([], [], '/tasks', 'POST', 'php://input', [
+            'content-type' => 'application/json',
+        ], [], [], $task->jsonSerialize());
+
+        $response = (new AddTask($queue))->handle($request);
         $this->assertEquals(200, $response->getStatusCode());
 
         $task = json_decode($response->getBody(), true);
@@ -87,8 +68,12 @@ final class HttpTest extends TestCase
      */
     public function testShowTask(string $identifier)
     {
-        $response = self::$client->get(sprintf('/task/%s', $identifier));
+        $queue = ServiceContainer::getInstance()->queue;
 
+        $request = new ServerRequest([], [], sprintf('/task/%s', $identifier), 'GET');
+        $request = $request->withAttribute('identifier', $identifier);
+
+        $response = (new ShowTask($queue))->handle($request);
         $this->assertEquals(200, $response->getStatusCode());
 
         $task = json_decode($response->getBody(), true);
@@ -113,37 +98,50 @@ final class HttpTest extends TestCase
      */
     public function testListTasks()
     {
-        $task1Response = self::$client->post('/tasks', [
-            'json' => new Task(
-                new Profile('profile1'),
-                new DummyJob,
-                [
-                    'param2' => 'value2',
-                    'param31' => 'value3',
-                ], [
-                    'tag1', 'tag3'
-                ]
-            )
-        ]);
-        $this->assertEquals(200, $task1Response->getStatusCode());
+        $queue = ServiceContainer::getInstance()->queue;
 
-        $task2Response = self::$client->post('/tasks', [
-            'json' => new Task(
-                new Profile('profile2'),
-                new DummyJob,
-                [
-                    'param2' => 'value2',
-                    'param31' => 'value3',
-                ], [
-                    'tag1', 'tag3'
-                ]
-            )
-        ]);
-        $this->assertEquals(200, $task2Response->getStatusCode());
+        $task1 = new Task(
+            new Profile('profile1'),
+            new DummyJob,
+            [
+                'param1' => 'value1',
+                'param2' => 'value2',
+            ], [
+                'tag1', 'tag2'
+            ]
+        );
 
-        $tasksResponse = self::$client->get('/tasks');
-        $this->assertEquals(200, $tasksResponse->getStatusCode());
-        $tasks = json_decode($tasksResponse->getBody(), true);
+        $request1 = new ServerRequest([], [], '/tasks', 'POST', 'php://input', [
+            'content-type' => 'application/json',
+        ], [], [], $task1->jsonSerialize());
+
+        $response1 = (new AddTask($queue))->handle($request1);
+        $this->assertEquals(200, $response1->getStatusCode());
+
+        $task2 = new Task(
+            new Profile('profile1'),
+            new DummyJob,
+            [
+                'param1' => 'value1',
+                'param2' => 'value2',
+            ], [
+                'tag1', 'tag2'
+            ]
+        );
+
+        $request2 = new ServerRequest([], [], '/tasks', 'POST', 'php://input', [
+            'content-type' => 'application/json',
+        ], [], [], $task2->jsonSerialize());
+
+        $response2 = (new AddTask($queue))->handle($request2);
+        $this->assertEquals(200, $response2->getStatusCode());
+
+        $request = new ServerRequest([], [], '/tasks', 'GET');
+
+        $response = (new ListTasks($queue))->handle($request);
+        $this->assertEquals(200, $response->getStatusCode());
+
+        $tasks = json_decode($response->getBody(), true);
 
         $this->assertEquals(3, count($tasks));
 
@@ -153,10 +151,5 @@ final class HttpTest extends TestCase
         ];
         $this->assertTrue(in_array($tasks[1]['profile'], $profiles));
         $this->assertTrue(in_array($tasks[2]['profile'], $profiles));
-    }
-
-    public static function tearDownAfterClass()
-    {
-        self::$process->stop();
     }
 }
