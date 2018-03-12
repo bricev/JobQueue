@@ -84,6 +84,13 @@ final class TaskHandler implements EventSubscriberInterface, LoggerAwareInterfac
 
         } catch (\Exception $e) {
             $this->eventDispatcher->dispatch(TaskHasFailed::NAME, new TaskHasFailed($task));
+
+            if ($this->logger) {
+                $this->logger->error($e->getMessage(), [
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine(),
+                ]);
+            }
         }
     }
 
