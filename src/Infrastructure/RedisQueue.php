@@ -222,7 +222,11 @@ final class RedisQueue implements Queue
         $this->flush();
 
         foreach ($tasks as $task) {
-            $task->updateStatus(new Status(Status::WAITING));
+            // Reset non finished tasks to `waiting` status
+            if (Status::FINISHED !== (string) $task->getStatus()) {
+                $task->updateStatus(new Status(Status::WAITING));
+            }
+
             $this->add($task);
         }
     }
