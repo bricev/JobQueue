@@ -61,7 +61,7 @@ class ServiceContainer
      */
     protected static function getServices(): ContainerInterface
     {
-        $cache = self::getConfigurationCachePath();
+        $cache = static::getConfigurationCachePath();
 
         if (Environment::isProd() and is_readable($cache)) {
             // Retrieve services from the cache, if exists...
@@ -73,7 +73,7 @@ class ServiceContainer
             $services = new ContainerBuilder;
 
             $loader = new YamlFileLoader($services, new FileLocator);
-            $loader->load(self::getConfigurationFilePath());
+            $loader->load(static::getConfigurationFilePath());
 
             // Compile and cache production config
             if (Environment::isProd()) {
