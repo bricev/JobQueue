@@ -171,7 +171,10 @@ final class ManagerTest extends TestCase
         $tasks = self::$queue->search();
 
         foreach ($tasks as $task) {
-            $this->assertEquals(Status::WAITING, (string) $task->getStatus());
+            $this->assertTrue(in_array((string) $task->getStatus(), [
+                Status::WAITING,
+                Status::FINISHED,
+            ]));
         }
     }
 

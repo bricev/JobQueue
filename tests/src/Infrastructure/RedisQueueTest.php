@@ -179,7 +179,10 @@ final class RedisQueueTest extends TestCase
         $queue->restore();
 
         foreach ($queue->search() as $task) {
-            $this->assertEquals(Status::WAITING, (string) $task->getStatus());
+            $this->assertTrue(in_array((string) $task->getStatus(), [
+                Status::WAITING,
+                Status::FINISHED,
+            ]));
         }
 
         return $queue;
