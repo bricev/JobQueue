@@ -61,6 +61,10 @@ final class RedisQueue implements Queue
                 300 // 5 minutes
             );
 
+            if (is_null($identifier)) {
+                throw new \Exception('Empty list');
+            }
+
             // Find and update task
             $task = $this->find($identifier);
             $task->updateStatus(new Status(Status::RUNNING));
