@@ -40,7 +40,7 @@ final class HttpTest extends TestCase
         ], [], [], $task->jsonSerialize());
 
         $response = (new AddTask($queue))->handle($request);
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(201, $response->getStatusCode());
 
         $task = json_decode($response->getBody(), true);
 
@@ -116,7 +116,7 @@ final class HttpTest extends TestCase
         ], [], [], $task1->jsonSerialize());
 
         $response1 = (new AddTask($queue))->handle($request1);
-        $this->assertEquals(200, $response1->getStatusCode());
+        $this->assertEquals(201, $response1->getStatusCode());
 
         $task2 = new Task(
             new Profile('profile1'),
@@ -134,7 +134,7 @@ final class HttpTest extends TestCase
         ], [], [], $task2->jsonSerialize());
 
         $response2 = (new AddTask($queue))->handle($request2);
-        $this->assertEquals(200, $response2->getStatusCode());
+        $this->assertEquals(201, $response2->getStatusCode());
 
         $request = new ServerRequest([], [], '/tasks', 'GET');
 
