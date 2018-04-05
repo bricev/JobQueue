@@ -35,6 +35,6 @@ final class AddTask extends BaseController
 
         $this->queue->add($task);
 
-        return new JsonResponse($task);
+        return new JsonResponse($task, 201);
     }
 }
