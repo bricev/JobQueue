@@ -11,7 +11,6 @@
     "middlewares/fast-route": "^1.0",
     "middlewares/payload": "^1.0",
     "middlewares/request-handler": "^1.0",
-    "monolog/monolog": "^1.0",
     "predis/predis": "^1.0",
     "psr/log": "^1.0",
     "ramsey/uuid": "^3.0",
