@@ -9,27 +9,24 @@ use Symfony\Component\DependencyInjection\Dumper\PhpDumper;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 
 /**
- * This class may be used to make extra services available to jobs from workers.
- *
- * The following services have to be set in /config/services_{env}.yml :
  *
  * @property \Symfony\Component\EventDispatcher\EventDispatcher $dispatcher
  * @property \Psr\Log\LoggerInterface $logger
  * @property \JobQueue\Domain\Task\Queue $queue
  */
-class ServiceContainer
+final class ServiceContainer
 {
     /**
      *
      * @var static
      */
-    protected static $instance;
+    private static $instance;
 
     /**
      *
      * @var ContainerInterface
      */
-    protected $services;
+    private $services;
 
     /**
      *
@@ -52,16 +49,16 @@ class ServiceContainer
 
         $services = self::getServices();
 
-        return self::$instance = new static($services);
+        return self::$instance = new self($services);
     }
 
     /**
      *
      * @return ContainerInterface
      */
-    protected static function getServices(): ContainerInterface
+    private static function getServices(): ContainerInterface
     {
-        $cache = static::getConfigurationCachePath();
+        $cache = self::getConfigurationCachePath();
 
         if ('prod' === getenv('JOBQUEUE_ENV') and is_readable($cache)) {
             // Retrieve services from the cache, if exists...
@@ -73,7 +70,7 @@ class ServiceContainer
             $services = new ContainerBuilder;
 
             $loader = new YamlFileLoader($services, new FileLocator);
-            $loader->load(static::getConfigurationFilePath());
+            $loader->load(self::getConfigurationFilePath());
 
             $services->compile(true);
 
@@ -94,7 +91,7 @@ class ServiceContainer
      *
      * @return string
      */
-    protected static function getConfigurationFilePath(): string
+    private static function getConfigurationFilePath(): string
     {
         // Get path from environment variables
         if ($path = (string) getenv('JOBQUEUE_CONFIG_PATH')) {
@@ -119,7 +116,7 @@ class ServiceContainer
      *
      * @return string
      */
-    protected static function getConfigurationCachePath(): string
+    private static function getConfigurationCachePath(): string
     {
         // Get dir path from environment variables
         if (!$dir = (string) getenv('JOBQUEUE_CACHE_PATH')) {
