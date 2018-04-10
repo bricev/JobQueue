@@ -58,7 +58,7 @@ final class ServiceContainer
      */
     private static function getServices(): ContainerInterface
     {
-        $cache = self::getConfigurationCachePath();
+        $cache = sprintf('%s/jobqueue_services.php', sys_get_temp_dir());
 
         if ('prod' === getenv('JOBQUEUE_ENV') and is_readable($cache)) {
             // Retrieve services from the cache, if exists...
@@ -70,7 +70,7 @@ final class ServiceContainer
             $services = new ContainerBuilder;
 
             $loader = new YamlFileLoader($services, new FileLocator);
-            $loader->load(self::getConfigurationFilePath());
+            $loader->load(sprintf('%s/config/services.yml', dirname(dirname(__DIR__))));
 
             $services->compile(true);
 
@@ -85,45 +85,6 @@ final class ServiceContainer
         }
 
         return $services;
-    }
-
-    /**
-     *
-     * @return string
-     */
-    private static function getConfigurationFilePath(): string
-    {
-        // Get path from environment variables
-        if ($path = (string) getenv('JOBQUEUE_CONFIG_PATH')) {
-            return $path;
-        }
-
-        // Get dir path depending on how component is used
-        if (class_exists('\Composer\Autoload\ClassLoader')) {
-            // Find config dir using composer ClassLoader class
-            $reflection = new \ReflectionClass(\Composer\Autoload\ClassLoader::class);
-            $root = dirname(dirname(dirname($reflection->getFileName())));
-
-        } else {
-            // If composer has not been user, try to guess the root path
-            $root = dirname(dirname(__DIR__));
-        }
-
-        return sprintf('%s/config/services.yml', $root);
-    }
-
-    /**
-     *
-     * @return string
-     */
-    private static function getConfigurationCachePath(): string
-    {
-        // Get dir path from environment variables
-        if (!$dir = (string) getenv('JOBQUEUE_CACHE_PATH')) {
-            $dir = sys_get_temp_dir();
-        }
-
-        return sprintf('%s/jobqueue_services.php', $dir);
     }
 
     /**
