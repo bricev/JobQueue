@@ -2,4 +2,4 @@
 
 include __DIR__ . '/../vendor/autoload.php';
 
-\JobQueue\Infrastructure\Environment::setName('test');
+(new \Dotenv\Dotenv(__DIR__))->load();

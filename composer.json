@@ -21,6 +21,7 @@
     "symfony/dependency-injection": "^4.0",
     "symfony/event-dispatcher": "^4.0",
     "symfony/yaml": "^4.0",
+    "vlucas/phpdotenv": "^2.0",
     "zendframework/zend-diactoros": "^1.0"
   },
   "require-dev": {

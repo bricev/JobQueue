@@ -63,7 +63,7 @@ class ServiceContainer
     {
         $cache = static::getConfigurationCachePath();
 
-        if (Environment::isProd() and is_readable($cache)) {
+        if ('prod' === getenv('JOBQUEUE_ENV') and is_readable($cache)) {
             // Retrieve services from the cache, if exists...
             require_once $cache;
             $services = new \ProjectServiceContainer;
@@ -75,10 +75,10 @@ class ServiceContainer
             $loader = new YamlFileLoader($services, new FileLocator);
             $loader->load(static::getConfigurationFilePath());
 
-            // Compile and cache production config
-            if (Environment::isProd()) {
-                $services->compile(true);
+            $services->compile(true);
 
+            // Compile and cache production config
+            if ('prod' === getenv('JOBQUEUE_ENV')) {
                 if (!is_dir($cacheDir = dirname($cache))) {
                     mkdir($cacheDir, 0777, true);
                 }
@@ -112,7 +112,7 @@ class ServiceContainer
             $root = dirname(dirname(__DIR__));
         }
 
-        return sprintf('%s/config/services_%s.yml', $root, Environment::getName());
+        return sprintf('%s/config/services.yml', $root);
     }
 
     /**

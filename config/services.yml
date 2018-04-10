@@ -1,5 +1,5 @@
 parameters:
-  redis_dsn: tcp://127.0.0.1:6379
+  redis_dsn: '%env(JOBQUEUE_REDIS_DSN)%'
 
 services:
   predis:

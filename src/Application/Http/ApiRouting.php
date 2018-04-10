@@ -5,7 +5,6 @@ namespace JobQueue\Application\Http;
 use function FastRoute\cachedDispatcher;
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
-use JobQueue\Infrastructure\Environment;
 
 final class ApiRouting
 {
@@ -23,7 +22,7 @@ final class ApiRouting
 
         }, [
             'cacheFile' => self::getRoutingCachePath(),
-            'cacheDisabled' => !Environment::isProd(),
+            'cacheDisabled' => 'prod' === getenv('JOBQUEUE_ENV') ? false : true,
         ]);
     }
 

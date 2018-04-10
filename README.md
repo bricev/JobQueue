@@ -11,11 +11,10 @@ multiple workers.
 ## Install
 
 This package is installable and auto-loadable via Composer:
-```
-composer require bricev/jobqueue
+```shell
+$ composer require bricev/jobqueue
 ```
 
-It may be used as a component or as an application. 
 The application proposes a webservice and two CLIs.
 Read bellow for more documentation.
 
@@ -23,10 +22,8 @@ Read bellow for more documentation.
 
 - PHP 7.1 must be installed
 - Redis must be installed (for queue data persistence)
-- the environment variable `JOBQUEUE_ENV` may be set as `dev`, `prod` (or any string, default if not set: `dev`)
-- a config file `services_{JOBQUEUE_ENV}.yml` must be stored in the `config/` dir:
-  - the following template may be used: `config/services_dev.yml.template`
-  - see Symfony dependency injection component [documentation](https://symfony.com/doc/current/components/dependency_injection.html) if you need help about the `service_*.yml` configuration
+- the `JOBQUEUE_ENV` environment variable may be set as `dev`, `prod` (or any string, default if not set: `dev`)
+- the `JOBQUEUE_REDIS_DSN` environment variable must define the Redis DSN (eg. 'tcp://127.0.0.1:6379')
 
 ## Usage
 
@@ -191,16 +188,16 @@ Those features require the proper configuration, see `Configuration` section abo
 The `manager` app can be used to perform CRUD operations on tasks.
 
 Usage:
-```
-bin/manager list               # lists all commands
-bin/manager {command} --help   # display the command help
+```shell
+$ bin/manager list               # lists all commands
+$ bin/manager {command} --help   # display the command help
 ```
 
 The `worker` app can be used to consume enqueued tasks.
 
 Usage:
-```
-bin/worker --help
+```shell
+$ bin/worker --help
 ```
 
 The `worker` app can be used as an OS service (eg. upstart, systemd... on unix) to run on servers.
@@ -321,11 +318,11 @@ Errors:
 
 ## Tests
 
-First, a local instance of Redis must run.
+First, a Redis server must run locally (127.0.0.1 on 6379 port).
 
 Then, to run tests, use the following command:
- ```
- vendor/bin/phpunit
+ ```shell
+$ php vendor/bin/phpunit
  ```
  
 The MIT License (MIT). Please see [LICENSE](LICENSE) for more information.
