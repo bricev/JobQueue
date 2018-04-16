@@ -14,7 +14,7 @@
     "predis/predis": "^1.0",
     "psr/log": "^1.0",
     "ramsey/uuid": "^3.0",
-    "relay/relay": "2.x@dev",
+    "relay/relay": "2.0.0-alpha1",
     "symfony/config": "^4.0",
     "symfony/console": "^4.0",
     "symfony/dependency-injection": "^4.0",
