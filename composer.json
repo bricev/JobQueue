@@ -4,6 +4,8 @@
   "description": "JobQueue is a PHP component that queues `tasks` defining `jobs` which can be executed by asynchronous and/or distributed `workers`",
   "homepage": "https://github.com/bricev/JobQueue",
   "license": "MIT",
+  "minimum-stability": "dev",
+  "prefer-stable": true,
   "require": {
     "php": "^7.1",
     "http-interop/response-sender": "^1.0",
@@ -14,7 +16,7 @@
     "predis/predis": "^1.0",
     "psr/log": "^1.0",
     "ramsey/uuid": "^3.0",
-    "relay/relay": "2.0.0-alpha1",
+    "relay/relay": "^2.0",
     "symfony/config": "^4.0",
     "symfony/console": "^4.0",
     "symfony/dependency-injection": "^4.0",
