@@ -3,7 +3,6 @@
 namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
-use JobQueue\Infrastructure\ServiceContainer;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -39,9 +38,7 @@ final class RestoreTasks extends ManagerCommand
             }
         }
 
-        ServiceContainer::getInstance()
-            ->queue
-            ->restore();
+        $this->queue->restore();
 
         $this->formatInfoSection('Queue restored', $output);
 

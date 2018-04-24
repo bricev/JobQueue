@@ -3,7 +3,6 @@
 namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
-use JobQueue\Infrastructure\ServiceContainer;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,9 +30,7 @@ final class DeleteTask extends ManagerCommand
     {
         $identifier = $input->getArgument('identifier');
 
-        ServiceContainer::getInstance()
-            ->queue
-            ->delete($identifier);
+        $this->queue->delete($identifier);
 
         $this->formatInfoSection(sprintf('Task %s deleted', $identifier), $output);
 

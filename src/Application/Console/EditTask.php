@@ -4,7 +4,6 @@ namespace JobQueue\Application\Console;
 
 use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Domain\Task\Status;
-use JobQueue\Infrastructure\ServiceContainer;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -31,11 +30,9 @@ final class EditTask extends ManagerCommand
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $queue = ServiceContainer::getInstance()->queue;
+        $task = $this->queue->find($input->getArgument('identifier'));
 
-        $task = $queue->find($input->getArgument('identifier'));
-
-        $queue->updateStatus($task, new Status($input->getArgument('status')));
+        $this->queue->updateStatus($task, new Status($input->getArgument('status')));
 
         $this->formatTaskBlock($task, $output);
 

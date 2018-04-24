@@ -5,7 +5,6 @@ namespace JobQueue\Application\Console;
 use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Task;
-use JobQueue\Infrastructure\ServiceContainer;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -54,9 +53,7 @@ final class AddTask extends ManagerCommand
             $parameters, $tags
         );
 
-        ServiceContainer::getInstance()
-            ->queue
-            ->add($task);
+        $this->queue->add($task);
 
         $this->formatTaskBlock($task, $output);
 

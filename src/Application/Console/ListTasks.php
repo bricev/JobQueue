@@ -5,7 +5,6 @@ namespace JobQueue\Application\Console;
 use JobQueue\Application\Utils\CommandTrait;
 use JobQueue\Domain\Task\Profile;
 use JobQueue\Domain\Task\Status;
-use JobQueue\Infrastructure\ServiceContainer;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Helper\TableSeparator;
@@ -139,9 +138,8 @@ final class ListTasks extends ManagerCommand
     {
         $tasks = [];
         $previousSeparator = null;
-        $queue = ServiceContainer::getInstance()->queue;
 
-        foreach ($queue->search($this->profile, $this->status, $this->tags, $order) as $task) {
+        foreach ($this->queue->search($this->profile, $this->status, $this->tags, $order) as $task) {
             $status = (string) $task->getStatus();
             $profile = (string) $task->getProfile();
 
