@@ -141,6 +141,13 @@ final class ListTasks extends ManagerCommand
 
         foreach ($this->queue->search($this->profile, $this->status, $this->tags, $order) as $task) {
             $status = (string) $task->getStatus();
+
+            // When no specific status is required in the command line,
+            // then do not display `finished` tasks (this is arbitrary)
+            if (is_null($this->status)) {
+                if (Status::FINISHED === $status) continue;
+            }
+
             $profile = (string) $task->getProfile();
 
             switch ($order) {
