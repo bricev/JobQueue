@@ -259,4 +259,21 @@ final class Task implements \Serializable, \JsonSerializable
     {
         return $this->identifier;
     }
+
+    /**
+     * Try to free memory
+     *
+     */
+    public function __destruct()
+    {
+        unset(
+            $this->identifier,
+            $this->status,
+            $this->profile,
+            $this->job,
+            $this->createdAt,
+            $this->parameters,
+            $this->tags
+        );
+    }
 }

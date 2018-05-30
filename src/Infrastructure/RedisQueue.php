@@ -73,6 +73,9 @@ final class RedisQueue implements Queue
             return $task;
 
         } catch (\Exception $e) {
+            // Try to free memory
+            unset($identifier, $task);
+
             // sleep a little to avoid high CPU consuming infinite loops...
             sleep(3);
 
