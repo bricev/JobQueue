@@ -88,9 +88,9 @@ final class ListTasks extends ManagerCommand
      */
     private function display(bool $follow, InputInterface $input, OutputInterface $output)
     {
-        $tasks = $this->getTasks($input->getOption('order'), $output);
+        list($rows, $taskCount) = $this->getRows($input->getOption('order'), $output);
 
-        if (empty($tasks)) {
+        if (empty($rows)) {
             $this->formatInfoBlock(
                 sprintf('There is currently no task corresponding to %s profile and %s status in queue.',
                     $this->profile ?: 'any',
@@ -100,7 +100,7 @@ final class ListTasks extends ManagerCommand
 
         } else {
             if ($input->getOption('legend')) {
-                $tasks = $this->addTableFooter($tasks, $output);
+                $rows = $this->addTableFooter($rows, $output);
             }
 
             $columns = ['Job', 'Profile', 'Date'];
@@ -111,11 +111,11 @@ final class ListTasks extends ManagerCommand
 
             (new Table($output))
                 ->setHeaders($columns)
-                ->setRows($tasks)
+                ->setRows($rows)
                 ->render()
             ;
 
-            $output->writeln(sprintf('There is %d tasks in queue', count($tasks)));
+            $output->writeln(sprintf('There is %d tasks in queue', $taskCount));
             $output->writeln('');
         }
 
@@ -134,9 +134,10 @@ final class ListTasks extends ManagerCommand
      * @param OutputInterface $output
      * @return array
      */
-    public function getTasks(string $order, OutputInterface $output): array
+    public function getRows(string $order, OutputInterface $output): array
     {
-        $tasks = [];
+        $taskCount = 0;
+        $rows = [];
         $previousSeparator = null;
 
         foreach ($this->queue->search($this->profile, $this->status, $this->tags, $order) as $task) {
@@ -147,6 +148,8 @@ final class ListTasks extends ManagerCommand
             if (is_null($this->status)) {
                 if (Status::FINISHED === $status) continue;
             }
+
+            $taskCount++;
 
             $profile = (string) $task->getProfile();
 
@@ -165,7 +168,7 @@ final class ListTasks extends ManagerCommand
             }
 
             if ($previousSeparator and $separator !== $previousSeparator) {
-                $tasks[] = new TableSeparator;
+                $rows[] = new TableSeparator;
             }
 
             $taskData = [
@@ -181,12 +184,12 @@ final class ListTasks extends ManagerCommand
 
             $taskData[] = $task->getIdentifier();
 
-            $tasks[] = $taskData;
+            $rows[] = $taskData;
 
             $previousSeparator = $separator;
         }
 
-        return $tasks;
+        return [$rows, $taskCount];
     }
 
     /**
